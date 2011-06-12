@@ -33,6 +33,9 @@ The i2csshrc file is a YAML formatted file that contains the following structure
         - ...
 
 ## Contributing to i2cssh
+
+I know that i2cssh doesn't have all the functionality of csshX, but either let me know what you really need or 
+fork, hack and create a pull request.
  
  * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
  * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
