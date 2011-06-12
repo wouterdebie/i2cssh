@@ -17,6 +17,8 @@ to all sessions.
         -g, --grid WxH                   Grid size
         -u, --username USERNAME          SSH username
 
+The cluster file format is one host per line.
+
 ## Contributing to i2cssh
  
  * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
