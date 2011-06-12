@@ -89,7 +89,12 @@ end
 end
 
 (rows * columns).times do |i|
-    term.sessions[i+1].write(:text => "#{ssh_prefix}#{servers[i]}") if servers && servers[i]
+  if servers && servers[i] then
+    term.sessions[i+1].write(:text => "#{ssh_prefix}#{servers[i]}") 
+  else
+    term.sessions[i+1].foreground_color.set("red")
+    term.sessions[i+1].write(:text => "echo -e '#{"\n"*100}UNUSED'")
+  end
 end
 if options[:debug] then
   require 'ripl'
