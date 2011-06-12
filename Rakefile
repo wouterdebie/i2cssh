@@ -17,11 +17,13 @@ Jeweler::Tasks.new do |gem|
   gem.name = "i2cssh"
   gem.homepage = "http://github.com/wouterdebie/i2cssh"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
-  gem.email = "wouter@spotify.com"
+  gem.summary = %Q{csshX like cluster ssh using iTerm2 panes}
+  gem.description = %Q{csshX like cluster ssh using iTerm2 panes}
+  gem.email = "wouter@evenflow.se"
   gem.authors = ["Wouter de Bie"]
   # dependencies defined in Gemfile
+  gem.add_dependency 'rb-appscript', "~> 0.6.1"
+  gem.add_dependency 'ripl', '~> 0.4.1'
 end
 Jeweler::RubygemsDotOrgTasks.new
 
