@@ -10,12 +10,12 @@ to all sessions.
 
 ## Usage
 
-  Usage: i2cssh [options]
-      -d, --debug                      Start RIPL after creating terminals
-      -f, --file FILE                  Cluster file
-      -F, --fullscreen                 Fullscreen
-      -g, --grid WxH                   Grid size
-      -u, --username USERNAME          SSH username
+    Usage: i2cssh [options]
+        -d, --debug                      Start RIPL after creating terminals
+        -f, --file FILE                  Cluster file
+        -F, --fullscreen                 Fullscreen
+        -g, --grid WxH                   Grid size
+        -u, --username USERNAME          SSH username
 
 ## Contributing to i2cssh
  
