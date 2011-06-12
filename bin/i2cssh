@@ -43,7 +43,6 @@ elsif options[:grid] then
 elsif options[:cluster] then
   require 'yaml'
   config_hash = YAML.load(File.read(File.expand_path("~/.i2csshrc")))
-  puts config_hash.inspect
   servers = config_hash["clusters"][options[:cluster]]
 end
 
