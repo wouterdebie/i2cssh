@@ -17,16 +17,17 @@ optparse = OptionParser.new do |opts|
   opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
   opts.on('-g', '--grid WxH', "Grid size") { |f| options[:grid] = f.split("x")}
   opts.on('-u', '--username USERNAME', "SSH username") { |u| options[:username] = u }
+  opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
 end
 
 optparse.parse!
 
-unless options[:file] || options[:grid] then
+unless options[:file] || options[:grid] || options[:cluster] then
   puts optparse.help
   exit
 end
 
-if options[:file] && options[:grid] then
+if options[:file]  && options[:grid] then
   puts "ERROR: -g and -f can't be used at the same time"
   puts optparse.help
   exit
@@ -36,14 +37,19 @@ ssh_prefix = "ssh " + (options[:username] ? "#{options[:username]}@" : "")
 
 if options[:file] then
   servers = File.read(options[:file]).split("\n")
-
-  count = servers.size
-  rows = Math.sqrt(count).ceil
-  columns = (count / rows.to_f).ceil
 elsif options[:grid] then
   columns = options[:grid][0].to_i
   rows = options[:grid][1].to_i
+elsif options[:cluster] then
+  require 'yaml'
+  config_hash = YAML.load(File.read(File.expand_path("~/.i2csshrc")))
+  puts config_hash.inspect
+  servers = config_hash["clusters"][options[:cluster]]
 end
+
+count = servers.size
+rows ||= Math.sqrt(count).ceil
+columns ||= (count / rows.to_f).ceil
 
 iterm = Appscript.app.by_name('iTerm')
 finder = Appscript.app.by_name('Finder')

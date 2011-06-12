@@ -16,8 +16,20 @@ to all sessions.
         -F, --fullscreen                 Fullscreen
         -g, --grid WxH                   Grid size
         -u, --username USERNAME          SSH username
+        -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
 
 The cluster file format is one host per line.
+
+## i2csshrc
+
+The i2csshrc file is a YAML formatted file that contains the following structure:
+
+    ---
+    clusters:
+      mycluster:
+        - host1
+        - host2
+        - ...
 
 ## Contributing to i2cssh
  
