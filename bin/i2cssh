@@ -61,16 +61,9 @@ else
   columns = (count / rows.to_f).ceil
 end
 
-#rows ||= Math.sqrt(count).ceil
-#columns ||= (count / rows.to_f).ceil
-
 iterm = Appscript.app.by_name('iTerm')
 finder = Appscript.app.by_name('Finder')
 sys_events = Appscript.app.by_name('System Events')
-
-puts rows
-puts columns
-puts servers.inspect
 
 term = iterm.make(:new => :terminal)
 session = term.sessions.after.make(:new => :session)
