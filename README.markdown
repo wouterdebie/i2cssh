@@ -14,9 +14,10 @@ to all sessions.
         -d, --debug                      Start RIPL after creating terminals
         -f, --file FILE                  Cluster file
         -F, --fullscreen                 Fullscreen
-        -g, --grid WxH                   Grid size
         -u, --username USERNAME          SSH username
         -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
+        -C, --columns COLUMNS            Amount of columns (rows will be calculated)
+        -R, --rows ROWS                  Amount of rows (columns will be calculated)
 
 The cluster file format is one host per line.
 

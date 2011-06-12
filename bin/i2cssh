@@ -5,9 +5,6 @@ require 'optparse'
 
 options = {}
 
-rows = nil
-columns = nil
-
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
   options[:debug] = false
@@ -15,31 +12,39 @@ optparse = OptionParser.new do |opts|
   opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true }
   opts.on('-f', '--file FILE', "Cluster file") { |f| options[:file] = f }
   opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
-  opts.on('-g', '--grid WxH', "Grid size") { |f| options[:grid] = f.split("x")}
   opts.on('-u', '--username USERNAME', "SSH username") { |u| options[:username] = u }
   opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
+  opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
+  opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
 end
 
 optparse.parse!
 
-unless options[:file] || options[:grid] || options[:cluster] then
+unless options[:file] || options[:cluster] then
   puts optparse.help
   exit
 end
 
-if options[:file]  && options[:grid] then
-  puts "ERROR: -g and -f can't be used at the same time"
+if options[:file]  && options[:cluster] then
+  puts "ERROR: -f and -c can't be used at the same time"
+  puts optparse.help
+  exit
+end
+
+if options[:columns]  && options[:rows] then
+  puts "ERROR: -C and -R can't be used at the same time"
   puts optparse.help
   exit
 end
 
 ssh_prefix = "ssh " + (options[:username] ? "#{options[:username]}@" : "")
 
+rows = options[:rows].to_i if options[:rows]
+columns = options[:columns].to_i if options[:columns]
+
+
 if options[:file] then
   servers = File.read(options[:file]).split("\n")
-elsif options[:grid] then
-  columns = options[:grid][0].to_i
-  rows = options[:grid][1].to_i
 elsif options[:cluster] then
   require 'yaml'
   config_hash = YAML.load(File.read(File.expand_path("~/.i2csshrc")))
@@ -47,20 +52,32 @@ elsif options[:cluster] then
 end
 
 count = servers.size
-rows ||= Math.sqrt(count).ceil
-columns ||= (count / rows.to_f).ceil
+if rows then
+  columns = (count / rows.to_f).ceil
+elsif columns then
+  rows = (count / columns.to_f).ceil
+else
+  rows = Math.sqrt(count).ceil
+  columns = (count / rows.to_f).ceil
+end
+
+#rows ||= Math.sqrt(count).ceil
+#columns ||= (count / rows.to_f).ceil
 
 iterm = Appscript.app.by_name('iTerm')
 finder = Appscript.app.by_name('Finder')
 sys_events = Appscript.app.by_name('System Events')
 
-window_bounds = finder.desktop.window.bounds
+puts rows
+puts columns
+puts servers.inspect
 
 term = iterm.make(:new => :terminal)
 session = term.sessions.after.make(:new => :session)
 session.exec(:command => "/bin/bash -l")
 
 if options[:fullscreen] then
+  window_bounds = finder.desktop.window.bounds
   window = iterm.windows.get.sort_by{|x| x.id_.get}.last
   window.bounds.set(window_bounds.get)
 end
