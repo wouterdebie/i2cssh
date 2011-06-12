@@ -9,31 +9,33 @@ rows = nil
 columns = nil
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [options] -c <cluster.txt>"
+  opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
   options[:debug] = false
-  opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true}
-  opts.on('-f', '--file FILE', "Cluster file") { |f| options[:cluster] = f}
+  options[:fullscreen] = false
+  opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true }
+  opts.on('-f', '--file FILE', "Cluster file") { |f| options[:file] = f }
+  opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
   opts.on('-g', '--grid WxH', "Grid size") { |f| options[:grid] = f.split("x")}
-  opts.on('-u', '--username USERNAME', "SSH username") { |u| options[:username] = u}
+  opts.on('-u', '--username USERNAME', "SSH username") { |u| options[:username] = u }
 end
 
 optparse.parse!
 
-unless options[:cluster] || options[:grid] then
-  puts optparse.banner
+unless options[:file] || options[:grid] then
+  puts optparse.help
   exit
 end
 
 if options[:file] && options[:grid] then
-  puts "-g and -f can't be used at the same time"
-  puts optparse.banner
+  puts "ERROR: -g and -f can't be used at the same time"
+  puts optparse.help
   exit
 end
 
 ssh_prefix = "ssh " + (options[:username] ? "#{options[:username]}@" : "")
 
 if options[:file] then
-  servers = File.read(options[:cluster]).split("\n")
+  servers = File.read(options[:file]).split("\n")
 
   count = servers.size
   rows = Math.sqrt(count).ceil
@@ -53,8 +55,10 @@ term = iterm.make(:new => :terminal)
 session = term.sessions.after.make(:new => :session)
 session.exec(:command => "/bin/bash -l")
 
-window = iterm.windows.get.sort_by{|x| x.id_.get}.last
-window.bounds.set(window_bounds.get)
+if options[:fullscreen] then
+  window = iterm.windows.get.sort_by{|x| x.id_.get}.last
+  window.bounds.set(window_bounds.get)
+end
 
 (columns - 1).times do
   sys_events.keystroke("d", :using => :command_down)
@@ -70,7 +74,7 @@ end
 end
 
 (rows * columns).times do |i|
-    term.sessions[i+1].write(:text => "echo #{ssh_prefix}#{servers[i]}") if servers && servers[i]
+    term.sessions[i+1].write(:text => "#{ssh_prefix}#{servers[i]}") if servers && servers[i]
 end
 if options[:debug] then
   require 'ripl'
