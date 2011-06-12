@@ -16,6 +16,7 @@ optparse = OptionParser.new do |opts|
   opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
   opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
   opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
+  opts.on('-s', '--session SESSIONNAME', "Name of an iTerm2 session") { |s| options[:session_name] = s }
 end
 
 optparse.parse!
@@ -64,8 +65,8 @@ end
 iterm = Appscript.app.by_name('iTerm')
 finder = Appscript.app.by_name('Finder')
 sys_events = Appscript.app.by_name('System Events')
-
 term = iterm.make(:new => :terminal)
+
 session = term.sessions.after.make(:new => :session)
 session.exec(:command => "/bin/bash -l")
 
@@ -90,10 +91,10 @@ end
 
 (rows * columns).times do |i|
   if servers && servers[i] then
-    term.sessions[i+1].write(:text => "#{ssh_prefix}#{servers[i]}") 
+    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && #{ssh_prefix}#{servers[i]}") 
   else
     term.sessions[i+1].foreground_color.set("red")
-    term.sessions[i+1].write(:text => "echo -e '#{"\n"*100}UNUSED'")
+    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && echo -e '#{"\n"*100}UNUSED'")
   end
 end
 if options[:debug] then
