@@ -16,7 +16,7 @@ optparse = OptionParser.new do |opts|
   opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
   opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
   opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
-  opts.on('-s', '--session SESSIONNAME', "Name of an iTerm2 session") { |s| options[:session_name] = s }
+#  opts.on('-s', '--session SESSIONNAME', "Name of an iTerm2 session") { |s| options[:session_name] = s }
 end
 
 optparse.parse!

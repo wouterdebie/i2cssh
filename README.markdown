@@ -32,6 +32,11 @@ The i2csshrc file is a YAML formatted file that contains the following structure
         - host2
         - ...
 
+## TODO
+
+- Functional parity with csshX (as far as possible)
+- Being able to specify an iTerm2 profile
+
 ## Contributing to i2cssh
 
 I know that i2cssh doesn't have all the functionality of csshX, but either let me know what you really need or 
