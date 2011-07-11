@@ -94,7 +94,7 @@ end
     term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && #{ssh_prefix}#{servers[i]}") 
   else
     term.sessions[i+1].foreground_color.set("red")
-    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && stty -isig -icanon && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null")
+    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null")
   end
 end
 if options[:debug] then
