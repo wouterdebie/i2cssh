@@ -1,111 +1,65 @@
 #!/usr/bin/ruby
 require 'rubygems'
-require 'appscript'
 require 'optparse'
+require 'i2cssh'
 
-options = {}
+i2_options, ssh_options, servers = {}, [], []
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
-  options[:debug] = false
-  options[:fullscreen] = false
-  opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true }
-  opts.on('-A', '--forward-agent', "Enable SSH agent forwarding") { options[:forward] = true }
-  opts.on('-f', '--file FILE', "Cluster file (one hostname per line)") { |f| options[:file] = f }
-  opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
-  opts.on('-l', '--login LOGIN', "SSH login name") { |u| options[:login] = u }
-  opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
-  opts.on('-m', '--machines a,b,c', Array, "Comma-separated list of hosts") { |h| options[:hosts] = h }
-  opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
-  opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
-#  opts.on('-s', '--session SESSIONNAME', "Name of an iTerm2 session") { |s| options[:session_name] = s }
-end
+    opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
 
+    # SSH options
+    opts.on '-A', '--forward-agent',
+        'Enable SSH agent forwarding' do
+        ssh_options << '-A'
+    end
+    opts.on '-l', '--login LOGIN',
+        'SSH login name' do |u|
+        ssh_options << "-l #{u}"
+    end
+
+    # iTerm2 options
+    opts.on '-F', '--fullscreen',
+        'Make the window fullscreen' do
+        i2_options[:fullscreen] = true
+    end
+    opts.on '-C', '--columns COLUMNS', Integer,
+        'Number of columns (rows will be calculated)' do |c|
+        i2_options[:columns] = c
+    end
+    opts.on '-R', '--rows ROWS', Integer,
+        'Number of rows (columns will be calculated)' do |r|
+        if i2_options[:columns]
+            puts "ERROR: -C and -R can't be used at the same time"
+            puts optparse.help
+            exit
+        else
+            i2_options[:rows] = r
+        end
+    end
+
+    # Hosts
+    opts.on '-f', '--file FILE',
+        'Cluster file (one hostname per line)' do |f|
+        servers += File.read(f).split "\n"
+    end
+    opts.on '-c', '--cluster CLUSTERNAME',
+        'Name of the cluster specified in ~/.i2csshrc' do |c|
+        require 'yaml'
+        config_hash = YAML.load File.read File.expand_path '~/.i2csshrc'
+        servers += config_hash["clusters"][c]
+    end
+    opts.on '-m', '--machines a,b,c', Array,
+        'Comma-separated list of hosts' do |h|
+        servers += h
+    end
+end
 optparse.parse!
 
-unless options[:file] || options[:cluster] || options[:hosts] then
-  puts optparse.help
-  exit
+if servers.empty?
+    puts "ERROR: no servers given"
+    puts optparse.help
+    exit
 end
 
-if [ options[:file], options[:cluster], options[:hosts] ].compact.length > 1 then
-  puts "ERROR: neither -f, -c or -h can be combined"
-  puts optparse.help
-  exit
-end
-
-if options[:columns]  && options[:rows] then
-  puts "ERROR: -C and -R can't be used at the same time"
-  puts optparse.help
-  exit
-end
-
-ssh_prefix = "ssh " +
-    (options[:forward] ? "-A " : "") +
-    (options[:login] ? "-l #{options[:login]} " : "")
-
-rows = options[:rows].to_i if options[:rows]
-columns = options[:columns].to_i if options[:columns]
-
-
-if options[:file] then
-  servers = File.read(options[:file]).split("\n")
-elsif options[:cluster] then
-  require 'yaml'
-  config_hash = YAML.load(File.read(File.expand_path("~/.i2csshrc")))
-  servers = config_hash["clusters"][options[:cluster]]
-elsif options[:hosts] then
-  servers = options[:hosts]
-end
-
-count = servers.size
-if rows then
-  columns = (count / rows.to_f).ceil
-elsif columns then
-  rows = (count / columns.to_f).ceil
-else
-  rows = Math.sqrt(count).ceil
-  columns = (count / rows.to_f).ceil
-end
-
-iterm = Appscript.app.by_name('iTerm')
-finder = Appscript.app.by_name('Finder')
-sys_events = Appscript.app.by_name('System Events')
-term = iterm.make(:new => :terminal)
-
-session = term.sessions.after.make(:new => :session)
-session.exec(:command => "/bin/bash -l")
-
-if options[:fullscreen] then
-  window_bounds = finder.desktop.window.bounds
-  window = iterm.windows.get.sort_by{|x| x.id_.get}.last
-  window.bounds.set(window_bounds.get)
-end
-
-(columns - 1).times do
-  sys_events.keystroke("d", :using => :command_down)
-end
-(rows - 1).times do
-  (columns - 1).times do
-    sys_events.key_code(123, :using => [:command_down, :option_down])
-  end
-  (columns).times do |x|
-    sys_events.keystroke("D", :using => :command_down)
-    sys_events.key_code(124, :using => [:command_down, :option_down]) unless (columns - 1) == x
-  end
-end
-
-(rows * columns).times do |i|
-  if servers && servers[i] then
-    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && #{ssh_prefix}#{servers[i]}") 
-  else
-    term.sessions[i+1].foreground_color.set("red")
-    term.sessions[i+1].write(:text => "history -d $(($HISTCMD-1)) && stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null")
-  end
-end
-if options[:debug] then
-  require 'ripl'
-  Ripl.start :binding => binding
-end
-
-
+I2Cssh.new servers, ssh_options, i2_options
