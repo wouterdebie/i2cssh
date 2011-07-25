@@ -12,7 +12,7 @@ optparse = OptionParser.new do |opts|
   opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true }
   opts.on('-f', '--file FILE', "Cluster file") { |f| options[:file] = f }
   opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
-  opts.on('-u', '--username USERNAME', "SSH username") { |u| options[:username] = u }
+  opts.on('-l', '--login LOGIN', "SSH login name") { |u| options[:login] = u }
   opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
   opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
   opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
@@ -38,7 +38,7 @@ if options[:columns]  && options[:rows] then
   exit
 end
 
-ssh_prefix = "ssh " + (options[:username] ? "#{options[:username]}@" : "")
+ssh_prefix = "ssh " + (options[:login] ? "#{options[:login]}@" : "")
 
 rows = options[:rows].to_i if options[:rows]
 columns = options[:columns].to_i if options[:columns]
