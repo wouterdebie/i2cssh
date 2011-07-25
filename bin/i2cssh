@@ -10,6 +10,7 @@ optparse = OptionParser.new do |opts|
   options[:debug] = false
   options[:fullscreen] = false
   opts.on('-d', '--debug', "Start RIPL after creating terminals") { options[:debug] = true }
+  opts.on('-A', '--forward-agent', "Enable SSH agent forwarding") { options[:forward] = true }
   opts.on('-f', '--file FILE', "Cluster file (one hostname per line)") { |f| options[:file] = f }
   opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
   opts.on('-l', '--login LOGIN', "SSH login name") { |u| options[:login] = u }
@@ -39,7 +40,9 @@ if options[:columns]  && options[:rows] then
   exit
 end
 
-ssh_prefix = "ssh " + (options[:login] ? "#{options[:login]}@" : "")
+ssh_prefix = "ssh " +
+    (options[:forward] ? "-A " : "") +
+    (options[:login] ? "-l #{options[:login]} " : "")
 
 rows = options[:rows].to_i if options[:rows]
 columns = options[:columns].to_i if options[:columns]
