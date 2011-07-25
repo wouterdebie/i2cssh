@@ -14,6 +14,7 @@ optparse = OptionParser.new do |opts|
   opts.on('-F', '--fullscreen', "Fullscreen") { options[:fullscreen] = true }
   opts.on('-l', '--login LOGIN', "SSH login name") { |u| options[:login] = u }
   opts.on('-c', '--cluster CLUSTERNAME', "Name of the cluster specified in ~/.i2csshrc") { |c| options[:cluster] = c }
+  opts.on('-m', '--machines a,b,c', Array, "Comma-separated list of hosts") { |h| options[:hosts] = h }
   opts.on('-C', '--columns COLUMNS', "Amount of columns (rows will be calculated)") { |c| options[:columns] = c }
   opts.on('-R', '--rows ROWS', "Amount of rows (columns will be calculated)") { |r| options[:rows] = r }
 #  opts.on('-s', '--session SESSIONNAME', "Name of an iTerm2 session") { |s| options[:session_name] = s }
@@ -21,13 +22,13 @@ end
 
 optparse.parse!
 
-unless options[:file] || options[:cluster] then
+unless options[:file] || options[:cluster] || options[:hosts] then
   puts optparse.help
   exit
 end
 
-if options[:file]  && options[:cluster] then
-  puts "ERROR: -f and -c can't be used at the same time"
+if [ options[:file], options[:cluster], options[:hosts] ].compact.length > 1 then
+  puts "ERROR: neither -f, -c or -h can be combined"
   puts optparse.help
   exit
 end
@@ -50,6 +51,8 @@ elsif options[:cluster] then
   require 'yaml'
   config_hash = YAML.load(File.read(File.expand_path("~/.i2csshrc")))
   servers = config_hash["clusters"][options[:cluster]]
+elsif options[:hosts] then
+  servers = options[:hosts]
 end
 
 count = servers.size
