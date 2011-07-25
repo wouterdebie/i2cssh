@@ -9,13 +9,14 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-
     Usage: i2cssh [options]
         -d, --debug                      Start RIPL after creating terminals
-        -f, --file FILE                  Cluster file
+        -A, --forward-agent              Enable SSH agent forwarding
+        -f, --file FILE                  Cluster file (one hostname per line)
         -F, --fullscreen                 Fullscreen
-        -u, --username USERNAME          SSH username
+        -l, --login LOGIN                SSH login name
         -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
+        -m, --machines a,b,c             Comma-separated list of hosts
         -C, --columns COLUMNS            Amount of columns (rows will be calculated)
         -R, --rows ROWS                  Amount of rows (columns will be calculated)
 
