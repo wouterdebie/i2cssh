@@ -23,7 +23,6 @@ Jeweler::Tasks.new do |gem|
   gem.authors = ["Wouter de Bie"]
   # dependencies defined in Gemfile
   gem.add_dependency 'rb-appscript', "~> 0.6.1"
-  gem.add_dependency 'ripl', '~> 0.4.1'
 end
 Jeweler::RubygemsDotOrgTasks.new
 
