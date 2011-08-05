@@ -38,8 +38,6 @@ class I2Cssh
           @columns = Math.sqrt(count).ceil
           @rows = (count / @columns.to_f).ceil
         end
-        puts @rows
-        puts @columns
     end
 
     def split_session
