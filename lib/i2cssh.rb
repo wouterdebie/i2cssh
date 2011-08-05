@@ -30,16 +30,17 @@ class I2Cssh
 
     def compute_geometry
         count = @servers.size
-        if @i2_options[:rows] then
-          @columns = (count / @i2_options[:rows].to_f).ceil
-        elsif @i2_options[:rows] then
-          @rows = (count / @i2_options[:columns].to_f).ceil
+        @rows = @i2_options[:rows]
+        @columns = @i2_options[:columns]
+
+        if @rows then
+          @columns = (count / @rows.to_f).ceil
+        elsif @columns then
+          @rows = (count / @columns.to_f).ceil
         else
           @columns = Math.sqrt(count).ceil
           @rows = (count / @columns.to_f).ceil
         end
-        puts @rows
-        puts @columns
     end
 
     def split_session
