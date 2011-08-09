@@ -47,7 +47,14 @@ optparse = OptionParser.new do |opts|
         'Name of the cluster specified in ~/.i2csshrc' do |c|
         require 'yaml'
         config_hash = YAML.load File.read File.expand_path '~/.i2csshrc'
-        servers += config_hash["clusters"][c]
+        cluster = config_hash["clusters"][c]
+        if cluster
+          servers += cluster
+        else
+          puts "ERROR: unknown cluster #{c}"
+          puts optparse.help
+          exit 1
+        end
     end
     opts.on '-m', '--machines a,b,c', Array,
         'Comma-separated list of hosts' do |h|
