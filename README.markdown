@@ -33,6 +33,8 @@ The i2csshrc file is a YAML formatted file that contains the following structure
         - host2
         - ...
 
+Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
+
 ## Known issues
 
 - i2cssh uses rb-appscript and that only seems to work on ruby 1.8.7 and breaks on 1.9.x
