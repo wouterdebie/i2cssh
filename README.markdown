@@ -44,7 +44,6 @@ Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
 ## TODO
 
 - Functional parity with csshX (as far as possible)
-- Being able to specify an iTerm2 profile
 
 ## Contributing to i2cssh
 
