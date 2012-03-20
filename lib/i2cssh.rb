@@ -18,6 +18,7 @@ class I2Cssh
         compute_geometry
         split_session
         maximize if i2_options[:fullscreen]
+        enable_broadcast if i2_options[:broadcast]
         start_ssh
     end
 
@@ -56,6 +57,10 @@ class I2Cssh
             @sys_events.key_code 124, :using => [:command_down, :option_down] unless @columns - 1 == x
           end
         end
+    end
+
+    def enable_broadcast
+        @sys_events.keystroke "I", :using => :command_down
     end
 
     def start_ssh

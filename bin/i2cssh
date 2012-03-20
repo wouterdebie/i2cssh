@@ -37,6 +37,10 @@ optparse = OptionParser.new do |opts|
             i2_options[:rows] = r
         end
     end
+    opts.on '-b', '--broadcast',
+        'Start with broadcast input (DANGEROUS!)' do
+        i2_options[:broadcast] = true
+    end
 
     # Hosts
     opts.on '-f', '--file FILE',
