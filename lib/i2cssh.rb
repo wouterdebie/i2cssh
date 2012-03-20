@@ -7,11 +7,16 @@ class I2Cssh
         @i2_options  = i2_options
         @servers     = servers
 
+        app_name = (i2_options[:iterm2]) ? 'iTerm2' : 'iTerm'
+
         raise Exception.new 'No servers given' if servers.empty?
 
         @sys_events = Appscript.app.by_name('System Events')
-        @iterm = Appscript.app.by_name('iTerm')
+        @iterm = Appscript.app.by_name(app_name)
         @term = @iterm.make(:new => :terminal)
+
+        @profile = i2_options[:profile] || "Default"
+
         session = @term.sessions.after.make :new => :session
         session.exec :command => "/bin/bash -l"
 
@@ -70,10 +75,13 @@ class I2Cssh
         1.upto(@rows*@columns) do |i|
             server = @servers[i-1]
             if server then
-                @term.sessions[i].write :text => "unset HISTFILE && #{@ssh_prefix} #{server}"
+                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{server}"
             else
+                
+                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
+                sleep 0.2
                 @term.sessions[i].foreground_color.set "red"
-                @term.sessions[i].write :text => "unset HISTFILE && stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
+                @term.sessions[i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
             end
         end
     end

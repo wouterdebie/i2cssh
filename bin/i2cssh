@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 require 'rubygems'
 require 'optparse'
-require 'i2cssh'
+require 'lib/i2cssh'
 
 i2_options, ssh_options, servers = {}, [], []
 
@@ -40,6 +40,15 @@ optparse = OptionParser.new do |opts|
     opts.on '-b', '--broadcast',
         'Start with broadcast input (DANGEROUS!)' do
         i2_options[:broadcast] = true
+    end
+    opts.on '-p', '--profile PROFILE',
+        'Name of the iTerm2 profile (default: Default)' do |p|
+        i2_options[:profile] = p
+        puts p
+    end
+    opts.on "-2", '--iterm2',
+        'Use iTerm2 instead of iTerm' do
+        i2_options[:iterm2] = true
     end
 
     # Hosts

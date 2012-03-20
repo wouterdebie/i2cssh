@@ -10,15 +10,17 @@ to all sessions.
 
 ## Usage
     Usage: i2cssh [options]
-        -d, --debug                      Start RIPL after creating terminals
-        -A, --forward-agent              Enable SSH agent forwarding
-        -f, --file FILE                  Cluster file (one hostname per line)
-        -F, --fullscreen                 Fullscreen
-        -l, --login LOGIN                SSH login name
-        -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
-        -m, --machines a,b,c             Comma-separated list of hosts
-        -C, --columns COLUMNS            Amount of columns (rows will be calculated)
-        -R, --rows ROWS                  Amount of rows (columns will be calculated)
+    -A, --forward-agent              Enable SSH agent forwarding
+    -l, --login LOGIN                SSH login name
+    -F, --fullscreen                 Make the window fullscreen
+    -C, --columns COLUMNS            Number of columns (rows will be calculated)
+    -R, --rows ROWS                  Number of rows (columns will be calculated)
+    -b, --broadcast                  Start with broadcast input (DANGEROUS!)
+    -p, --profile PROFILE            Name of the iTerm2 profile (default: Default)
+    -2, --iterm2                     Use iTerm2 instead of iTerm
+    -f, --file FILE                  Cluster file (one hostname per line)
+    -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
+    -m, --machines a,b,c             Comma-separated list of hosts
 
 The cluster file format is one host per line.
 
