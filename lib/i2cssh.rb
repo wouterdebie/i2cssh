@@ -51,12 +51,14 @@ class I2Cssh
     end
 
     def split_session
+        first = true
         2.upto @columns do
           @sys_events.keystroke "d", :using => :command_down
         end
         2.upto @rows do
           1.upto @columns do
-            @sys_events.key_code 123, :using => [:command_down, :option_down]
+            @sys_events.key_code 123, :using => [:command_down, :option_down] unless first
+            first = false
           end
           @columns.times do |x|
             @sys_events.keystroke "D", :using => :command_down
