@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 require 'rubygems'
 require 'optparse'
-require 'lib/i2cssh'
+require 'i2cssh'
 
 i2_options, ssh_options, servers = {}, [], []
 
