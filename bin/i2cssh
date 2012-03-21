@@ -2,11 +2,22 @@
 require 'rubygems'
 require 'optparse'
 require 'i2cssh'
+require 'yaml'
+config_hash = YAML.load File.read File.expand_path '~/.i2csshrc'
 
 i2_options, ssh_options, servers = {}, [], []
 
 optparse = OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
+
+    iTerm2 = config_hash["iTerm2"]
+    if iTerm2
+        i2_options[:iterm2] = true
+    end
+    bcast = config_hash["broadcast"]
+    if bcast
+        i2_options[:broadcast] = true
+    end
 
     # SSH options
     opts.on '-A', '--forward-agent',
@@ -58,8 +69,6 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-c', '--cluster CLUSTERNAME',
         'Name of the cluster specified in ~/.i2csshrc' do |c|
-        require 'yaml'
-        config_hash = YAML.load File.read File.expand_path '~/.i2csshrc'
         cluster = config_hash["clusters"][c]
         if cluster
           servers += cluster
@@ -75,6 +84,32 @@ optparse = OptionParser.new do |opts|
     end
 end
 optparse.parse!
+
+ARGV.each do |arg|
+   if arg =~ /@/
+      l = arg.split('@')[0]
+      c = arg.split('@')[1]
+   else
+      l = nil
+      c = arg
+   end
+   cluster = config_hash["clusters"][c]
+   if cluster
+      cluster.each do |m|
+         if l
+            servers.push(l+'@'+m)
+         else
+	    servers.push(m)
+         end
+      end
+   else
+      if l
+         servers.push(l+'@'+c)
+      else
+         servers.push(c)
+      end
+   end
+end
 
 if servers.empty?
     puts "ERROR: no servers given"
