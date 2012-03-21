@@ -9,7 +9,7 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options]
+    Usage: i2cssh [options] [username@host [username@host]]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -F, --fullscreen                 Make the window fullscreen
@@ -23,7 +23,7 @@ to all sessions.
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
 
-For -c and -m options, the format username@cluster or username@host.
+For -c and -m options, the format username@cluster or username@host can be used.
 
 ## i2csshrc
 
@@ -52,7 +52,6 @@ Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
 ## Known issues
 
 - i2cssh uses rb-appscript and that only seems to work on ruby 1.8.7 and breaks on 1.9.x
-- Only a single username can be used when using -m username@host.
 
 ## TODO
 
