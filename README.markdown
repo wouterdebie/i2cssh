@@ -25,6 +25,17 @@ to all sessions.
 
 For -c and -m options, the format username@cluster or username@host can be used.
 
+The following commands are exactly the same, however, they might serve different purposes:
+
+    $ i2cssh -m user1@host1,user2@host2
+    $ i2cssh user1@host1 user2@host2
+
+Using the -l option will override all usernames:
+
+    $ i2css -l foo user1@host1 user2@host2
+
+This will connect to both host1 and host2 as the user foo
+
 ## i2csshrc
 
 The i2csshrc file is a YAML formatted file that contains the following structure:
