@@ -23,22 +23,22 @@ to all sessions.
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
 
-For -c and -m options, the format username@cluster or username@host can be used.
+For `-c` and `-m` options, the format `username@cluster` or `username@host` can be used.
 
 The following commands are exactly the same, however, they might serve different purposes:
 
     $ i2cssh -m user1@host1,user2@host2
     $ i2cssh user1@host1 user2@host2
 
-Using the -l option will override all usernames:
+Using the `-l` option will override all usernames:
 
     $ i2css -l foo user1@host1 user2@host2
 
-This will connect to both host1 and host2 as the user foo
+This will connect to both `host1` and `host2` as the user `foo`
 
 ## i2csshrc
 
-The i2csshrc file is a YAML formatted file that contains the following structure:
+The `i2csshrc` file is a YAML formatted file that contains the following structure:
 
     ---
     version: 2             # Mandatory. Current version is 2
