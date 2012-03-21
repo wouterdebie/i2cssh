@@ -28,7 +28,7 @@ if File.exists?(config_file)
 end
 
 optparse = OptionParser.new do |opts|
-    opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
+    opts.banner = "Usage: #{File.basename(__FILE__)} [options] [login@machine] [login@cluster]"
 
     # Check if we have a cluster. 
     opts.on '-c', '--cluster CLUSTERNAME',
@@ -128,6 +128,36 @@ optparse.parse!
 
 if i2_options[:login_override] then
     ssh_options << "-l #{i2_options[:login_override]}"
+end
+
+ARGV.each do |arg|
+   if arg =~ /@/
+      l = arg.split('@')[0]
+      c = arg.split('@')[1]
+   else
+      l = nil
+      c = arg
+   end
+   if File.exists?(config_file) 
+      cluster = config_hash["clusters"][c]
+   else
+      cluster = nil
+   end
+   if cluster
+      cluster.each do |m|
+         if l
+            servers.push(l+'@'+m)
+         else
+	    servers.push(m)
+         end
+      end
+   else
+      if l
+         servers.push(l+'@'+c)
+      else
+         servers.push(c)
+      end
+   end
 end
 
 if servers.empty?
