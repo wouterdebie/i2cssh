@@ -3,7 +3,7 @@ require 'rubygems'
 require 'optparse'
 require 'i2cssh'
 require 'yaml'
-require 'pp'
+
 config_file = File.expand_path "~/.i2csshrc"
 
 i2_options, ssh_options, servers, clusters, login_from_cli = {}, [], [], {}, false
@@ -48,6 +48,10 @@ optparse = OptionParser.new do |opts|
             i2_options[:login_override] = login_from_cli if login_from_cli
             i2_options[:broadcast] = cluster["broadcast"] || i2_options[:broadcast]
 
+            if i2_options[:login_override] then
+                cluster_hosts = cluster_hosts.map{|h| "#{i2_options[:login_override]}@#{h}"}
+            end
+
             servers += cluster_hosts
         else
             puts "ERROR: unknown cluster #{c}"
@@ -58,13 +62,7 @@ optparse = OptionParser.new do |opts|
 
     opts.on '-m', '--machines a,b,c', Array,
         'Comma-separated list of hosts' do |h|
-        h.each do |host|
-            if host =~ /(.+)@(.+)/ then
-                i2_options[:login_override] = $1
-                host = $2
-            end
-            servers << host
-        end
+        servers += h
     end
 
     # Hosts
@@ -126,38 +124,44 @@ optparse = OptionParser.new do |opts|
 end
 optparse.parse!
 
-if i2_options[:login_override] then
-    ssh_options << "-l #{i2_options[:login_override]}"
+if ARGV.length > 0 then
+  servers = ARGV
+  if File.exists?(config_file)
+    my_servers = []
+    print servers
+    servers.each do |s|
+      print s
+      if s =~ /@/ then
+        l = s.split('@')[0]
+        c = s.split('@')[1]
+      else
+        l = nil
+        l = i2_options[:login_override] if i2_options[:login_override]
+        c = arg
+      end
+      cluster = config_hash["clusters"][c]
+      if cluster then
+        cluster.each do |h|
+          if l
+            my_servers.push(l+'@'+h)
+          else
+            my_servers.push(h)
+          end
+        end
+      else
+        if l then
+          my_servers.push(l+'@'+c)
+        else
+          my_servers.push(c)
+        end
+      end
+    end
+    servers = my_servers
+  end
 end
 
-ARGV.each do |arg|
-   if arg =~ /@/
-      l = arg.split('@')[0]
-      c = arg.split('@')[1]
-   else
-      l = nil
-      c = arg
-   end
-   if File.exists?(config_file) 
-      cluster = config_hash["clusters"][c]
-   else
-      cluster = nil
-   end
-   if cluster
-      cluster.each do |m|
-         if l
-            servers.push(l+'@'+m)
-         else
-	    servers.push(m)
-         end
-      end
-   else
-      if l
-         servers.push(l+'@'+c)
-      else
-         servers.push(c)
-      end
-   end
+if i2_options[:login_override] then
+    servers = servers.map{|h| "#{i2_options[:login_override]}@#{h.gsub(/.+@/,'')}"}
 end
 
 if servers.empty?

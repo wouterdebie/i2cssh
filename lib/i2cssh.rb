@@ -81,7 +81,7 @@ class I2Cssh
             else
                 
                 @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
-                sleep 0.2
+                sleep 0.3
                 @term.sessions[i].foreground_color.set "red"
                 @term.sessions[i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
             end
