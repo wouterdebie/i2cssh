@@ -9,7 +9,7 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options]
+    Usage: i2cssh [options] [login@machine] [login@cluster]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -F, --fullscreen                 Make the window fullscreen
@@ -29,6 +29,10 @@ The cluster file format is one host per line.
 The i2csshrc file is a YAML formatted file that contains the following structure:
 
     ---
+    iTerm2: true
+
+    broadcast: true
+
     clusters:
       mycluster:
         - host1

@@ -8,7 +8,7 @@ config_hash = YAML.load File.read File.expand_path '~/.i2csshrc'
 i2_options, ssh_options, servers = {}, [], []
 
 optparse = OptionParser.new do |opts|
-    opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
+    opts.banner = "Usage: #{File.basename(__FILE__)} [options] [login@machine] [login@cluster]"
 
     iTerm2 = config_hash["iTerm2"]
     if iTerm2
