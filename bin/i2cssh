@@ -19,6 +19,7 @@ if File.exists?(config_file)
         i2_options[:iterm2] = config_hash["iterm2"]
         i2_options[:login_override] = config_hash["login"]
         i2_options[:broadcast] = config_hash["broadcast"]
+        i2_options[:profile] = config_hash["profile"]
         
     else
         # Convert version 1 format to version 2
@@ -47,6 +48,7 @@ optparse = OptionParser.new do |opts|
             i2_options[:login_override] = cluster["login"] || i2_options[:login_override]
             i2_options[:login_override] = login_from_cli if login_from_cli
             i2_options[:broadcast] = cluster["broadcast"] || i2_options[:broadcast]
+            i2_options[:profile] = cluster["profile"] || i2_options[:profile]
 
             if i2_options[:login_override] then
                 cluster_hosts = cluster_hosts.map{|h| "#{i2_options[:login_override]}@#{h}"}
