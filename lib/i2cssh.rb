@@ -77,7 +77,8 @@ class I2Cssh
         1.upto(@rows*@columns) do |i|
             server = @servers[i-1]
             if server then
-                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{server}"
+                rank = i-1
+                @term.sessions[i].write :text => "unset HISTFILE && export LC_RANK=#{rank}; echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} -o SendEnv=LC_RANK #{server}"
             else
                 
                 @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
