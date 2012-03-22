@@ -9,7 +9,7 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options] [login@machine] [login@cluster]
+    Usage: i2cssh [options]  [(username@host [username@host] | username@cluster)]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -F, --fullscreen                 Make the window fullscreen
@@ -22,6 +22,8 @@ to all sessions.
     -f, --file FILE                  Cluster file (one hostname per line)
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
+
+i2cssh will assume you want to connect to a cluster when only one host is given.
 
 For `-c` and `-m` options, the format `username@cluster` or `username@host` can be used.
 
@@ -41,18 +43,21 @@ This will connect to both `host1` and `host2` as the user `foo`
 The `i2csshrc` file is a YAML formatted file that contains the following structure:
 
     ---
-    version: 2             # Mandatory. Current version is 2
-    iterm2: false           # Optional. Set to true if you use iTerm2.app instead of iTerm.app.
-    broadcast: false        # Optional. Set to true if you want to enable broadcast for all clusters.
-    login: myusername       # Optional. Always use this username.
+    version: 2
+    [optional parameters]
     clusters:
       mycluster:
-        broadcast: false    # Optional. Set to true if you want to enable broadcast for this cluster.
-        login: false        # Optional. Set to true if you want a specific login for this cluster.
+        [optional parameters]
         hosts:
           - host1
           - host2
-          - ...
+
+Optional parameters can be used globablly or per cluster and include:
+
+    broadcast: (true/false)     # Enable/disable broadcast on start
+    login: <username>           # Use this username for login
+    profile: <iTerm2 profile>   # Use this iTerm profile
+    iterm2: true                # Use iTerm2.app instead of iTerm.app (only available globally)
 
 The following precedence is used:
 
