@@ -9,7 +9,7 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options] [username@host [username@host]]
+    Usage: i2cssh [options] [login@machine] [login@cluster]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -F, --fullscreen                 Make the window fullscreen
