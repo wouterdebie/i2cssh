@@ -9,7 +9,7 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options] [username@host [username@host]]
+    Usage: i2cssh [options]  [(username@host [username@host] | username@cluster)]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -F, --fullscreen                 Make the window fullscreen
@@ -22,6 +22,8 @@ to all sessions.
     -f, --file FILE                  Cluster file (one hostname per line)
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
+
+i2cssh will assume you want to connect to a cluster when only one host is given.
 
 For `-c` and `-m` options, the format `username@cluster` or `username@host` can be used.
 
