@@ -1,11 +1,12 @@
 require 'appscript'
 
 class I2Cssh
-    def initialize servers, ssh_options, i2_options
-        @ssh_prefix  = "ssh " + ssh_options.join(' ')
-        @ssh_options = ssh_options
-        @i2_options  = i2_options
-        @servers     = servers
+    def initialize servers, ssh_options, i2_options, ssh_environment
+        @ssh_prefix         = "ssh " + ssh_options.join(' ')
+        @ssh_options        = ssh_options
+        @i2_options         = i2_options
+        @servers            = servers
+        @ssh_environment    = ssh_environment
 
         app_name = (i2_options[:iterm2]) ? 'iTerm2' : 'iTerm'
 
@@ -77,7 +78,18 @@ class I2Cssh
         1.upto(@rows*@columns) do |i|
             server = @servers[i-1]
             if server then
-                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{server}"
+                ssh_env = ""
+
+                if @i2_options[:rank] then
+                    @ssh_environment['LC_RANK'] = i-1
+                end
+
+                if !@ssh_environment.empty? then
+                    send_env = "-o SendEnv=#{@ssh_environment.keys.join(",")}"
+                    @term.sessions[i].write :text => "#{@ssh_environment.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
+                end
+
+                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
                 
                 @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""

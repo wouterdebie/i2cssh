@@ -12,6 +12,7 @@ to all sessions.
     Usage: i2cssh [options]  [(username@host [username@host] | username@cluster)]
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
+    -e, --environment KEY=VAL        Send environment vars (comma-separated list, need to start with LC_)
     -F, --fullscreen                 Make the window fullscreen
     -C, --columns COLUMNS            Number of columns (rows will be calculated)
     -R, --rows ROWS                  Number of rows (columns will be calculated)
@@ -21,6 +22,7 @@ to all sessions.
     -2, --iterm2                     Use iTerm2 instead of iTerm
     -f, --file FILE                  Cluster file (one hostname per line)
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
+    -r, --rank                       Send LC_RANK with the host number as environment variable
     -m, --machines a,b,c             Comma-separated list of hosts
 
 i2cssh will assume you want to connect to a cluster when only one host is given.
@@ -57,6 +59,12 @@ Optional parameters can be used globablly or per cluster and include:
     broadcast: (true/false)     # Enable/disable broadcast on start
     login: <username>           # Use this username for login
     profile: <iTerm2 profile>   # Use this iTerm profile
+    rank: (true/false)          # Enable sending LC_RANK as an environment variable
+
+    environment:                # Send the following enviroment variables
+        - LC_FOO: foo
+        - LC_BAR: bar
+    
     iterm2: true                # Use iTerm2.app instead of iTerm.app (only available globally)
 
 The following precedence is used:
@@ -64,6 +72,64 @@ The following precedence is used:
 global options from config < cluster options from config < command line flags
 
 Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
+
+## Options
+
+### -A, --forward-agent
+
+Enable SSH agent forwarding
+
+### -l, --login LOGIN
+
+This option will override all logins passed in to i2cssh. This goes for global config, cluster config or username@host passed on the command line
+
+### -e, --environment KEY=VAL
+
+Allows for passing environment varables to the SSH session. This can be a comma-separated list: `-e LC_FOO=foo,LC_BAR=bar`
+
+### -F, --fullscreen
+
+Enable fullscreen on startup
+
+### -C, --columns COLUMNS
+
+Set the amount of columns. Can't be used in conjunction with -R
+
+### -R, --rows ROWS
+
+Set the amount of columns. Can't be used in conjunction with -C
+
+### -b, --broadcast
+
+Enable broadcast on startup. i2cssh will send cmd-shift-i to the window and press the OK button.
+
+### -nb, --nobroadcast
+
+Disable broadcast. This setting can be used to disable any broadcast that was set in the config.
+
+### -p, --profile PROFILE
+
+Use a specific iTerm profile
+
+### -2, --iterm2
+
+Use iTerm2.app instead of iTerm.app
+
+### -f, --file
+
+Will read nodes from a file. These will be added to any hosts specified on the command line or in the config
+
+### -c, --cluster
+
+Connect to a cluster that is specified in the config
+
+### -r, --rank
+
+Send a LC_RANK environment variable different for each host
+
+### -m, --machines a,b,c
+
+Connect to the machines a, b and c
 
 ## Known issues
 

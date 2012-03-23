@@ -3,10 +3,11 @@ require 'rubygems'
 require 'optparse'
 require 'i2cssh'
 require 'yaml'
+require 'pp'
 
 @config_file = File.expand_path "~/.i2csshrc"
 
-@i2_options, ssh_options, @servers, @clusters = {}, [], [], {}
+@i2_options, ssh_options, @servers, @clusters, @ssh_environment = {}, [], [], {}, {}
 
 def get_hosts(c)
     if c =~ /(.+)@(.+)/ then
@@ -19,14 +20,17 @@ def get_hosts(c)
     if cluster
         cluster_hosts = cluster["hosts"]
 
-        @i2_options[:login_override] = cluster["login"] || @i2_options[:login_override]
+        @i2_options[:login_override] = !cluster["login"].nil? ? cluster["login"] : @i2_options[:login_override]
         @i2_options[:login_override] = login_from_cli if login_from_cli
-        @i2_options[:broadcast] = cluster["broadcast"] || @i2_options[:broadcast]
-        @i2_options[:profile] = cluster["profile"] || @i2_options[:profile]
+        @i2_options[:broadcast] = !cluster["broadcast"].nil? ? cluster["broadcast"] : @i2_options[:broadcast]
+        @i2_options[:profile] = !cluster["profile"].nil? ? cluster["profile"]  : @i2_options[:profile]
+        @i2_options[:rank] = !cluster["rank"].nil? ? cluster["rank"] : @i2_options[:rank]
 
         if @i2_options[:login_override] then
             cluster_hosts = cluster_hosts.map{|h| "#{@i2_options[:login_override]}@#{h}"}
         end
+
+        @ssh_environment.merge!(cluster["environment"].inject({}){|m, v| m.merge(v)}) if cluster["environment"]
 
         @servers += cluster_hosts
     else
@@ -47,6 +51,9 @@ if File.exists?(@config_file)
         @i2_options[:login_override] = config_hash["login"]
         @i2_options[:broadcast] = config_hash["broadcast"]
         @i2_options[:profile] = config_hash["profile"]
+        @i2_options[:rank] = config_hash["rank"]
+        
+        @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
         
     else
         # Convert version 1 format to version 2
@@ -87,6 +94,14 @@ optparse = OptionParser.new do |opts|
         @i2_options[:login_override] = u
         
     end
+    opts.on '-e', '--environment KEY=VAL',
+        'Send environment vars (comma-separated list, need to start with LC_)' do |e|
+        @ssh_environment = e.split(",").inject({}) {|m, x| key, val = x.split("="); m[key] = val; m}
+    end
+    opts.on '-r', '--rank',
+        'Send LC_RANK with the host number as environment variable' do
+        @i2_options[:rank] = true
+    end
 
     # iTerm2 options
     opts.on '-F', '--fullscreen',
@@ -95,14 +110,20 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-C', '--columns COLUMNS', Integer,
         'Number of columns (rows will be calculated)' do |c|
-        @i2_options[:columns] = c
+        if @i2_options[:rows]
+            puts "ERROR: -C and -R can't be used at the same time"
+            puts optparse.help
+            exit 1
+        else
+            @i2_options[:columns] = c
+        end
     end
     opts.on '-R', '--rows ROWS', Integer,
         'Number of rows (columns will be calculated)' do |r|
         if @i2_options[:columns]
             puts "ERROR: -C and -R can't be used at the same time"
             puts optparse.help
-            exit
+            exit 1
         else
             @i2_options[:rows] = r
         end
@@ -118,7 +139,6 @@ optparse = OptionParser.new do |opts|
     opts.on '-p', '--profile PROFILE',
         'Name of the iTerm2 profile (default: Default)' do |p|
         @i2_options[:profile] = p
-        puts p
     end
     opts.on "-2", '--iterm2',
         'Use iTerm2 instead of iTerm' do
@@ -145,4 +165,4 @@ if @servers.empty?
     exit
 end
 
-I2Cssh.new @servers, ssh_options, @i2_options
+I2Cssh.new @servers, ssh_options, @i2_options, @ssh_environment
