@@ -69,7 +69,7 @@ Optional parameters can be used globablly or per cluster and include:
 
 The following precedence is used:
 
-global options from config < cluster options from config < command line flags
+`global options from config` < `cluster options from config` < `command line flags`
 
 Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
 
@@ -125,7 +125,7 @@ Connect to a cluster that is specified in the config
 
 ### -r, --rank
 
-Send a LC_RANK environment variable different for each host
+Send a LC_RANK environment variable different for each host (from 0 to n)
 
 ### -m, --machines a,b,c
 

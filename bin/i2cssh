@@ -3,7 +3,6 @@ require 'rubygems'
 require 'optparse'
 require 'i2cssh'
 require 'yaml'
-require 'pp'
 
 @config_file = File.expand_path "~/.i2csshrc"
 
