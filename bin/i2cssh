@@ -6,7 +6,7 @@ require 'yaml'
 
 @config_file = File.expand_path "~/.i2csshrc"
 
-@i2_options, ssh_options, @servers, @clusters, @ssh_environment = {}, [], [], {}, {}
+@i2_options, ssh_options, @servers, @clusters, @ssh_environment, opts_from_cmdline = {}, [], [], {}, {}, {}
 
 def get_hosts(c)
     if c =~ /(.+)@(.+)/ then
@@ -19,13 +19,11 @@ def get_hosts(c)
     if cluster
         set_options(cluster, login_from_cli)
 
-        cluster_hosts = cluster["hosts"]
-
         if @i2_options[:login_override] then
-            cluster_hosts = cluster_hosts.map{|h| "#{@i2_options[:login_override]}@#{h}"}
+            @servers += cluster["hosts"].map{|h| "#{@i2_options[:login_override]}@#{h}"}
+        else
+            @servers += cluster["hosts"]
         end
-
-        @servers += cluster_hosts
     else
         puts "ERROR: unknown cluster #{c}. Check your #{@config_file}"
         exit 1
@@ -33,16 +31,11 @@ def get_hosts(c)
 end
 
 def set_options(config_hash, login_override=nil)
-    if login_override then
-        @i2_options[:login_override] = login_override
-    else
-        @i2_options[:login_override] = config_hash["login"].nil? ? @i2_options[:login_override] : config_hash["login"]
+    [:broadcast, :profile, :rank, :iterm2, :login_override].each do |p|
+        @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
-    @i2_options[:broadcast] = config_hash["broadcast"].nil? ? @i2_options[:broadcast] : config_hash["broadcast"]
-    @i2_options[:profile] = config_hash["profile"].nil? ? @i2_options[:profile] : config_hash["profile"]
-    @i2_options[:rank] = config_hash["rank"].nil? ? @i2_options[:rank] : config_hash["rank"]
-    @i2_options[:iterm2] = config_hash["iterm2"].nil? ? @i2_options[:iterm2] : config_hash["iterm2"]
+    @i2_options[:login_override] = login_override if login_override
 
     @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
 end
@@ -60,8 +53,6 @@ if File.exists?(@config_file)
     end
 
 end
-
-opts_from_cmdline = {}
 
 optparse = OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename(__FILE__)} [options] [(username@host [username@host] | username@cluster)]"
