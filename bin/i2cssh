@@ -17,19 +17,13 @@ def get_hosts(c)
     cluster = @clusters[c]
 
     if cluster
-        cluster_hosts = cluster["hosts"]
+        set_options(cluster, login_from_cli)
 
-        @i2_options[:login_override] = !cluster["login"].nil? ? cluster["login"] : @i2_options[:login_override]
-        @i2_options[:login_override] = login_from_cli if login_from_cli
-        @i2_options[:broadcast] = !cluster["broadcast"].nil? ? cluster["broadcast"] : @i2_options[:broadcast]
-        @i2_options[:profile] = !cluster["profile"].nil? ? cluster["profile"]  : @i2_options[:profile]
-        @i2_options[:rank] = !cluster["rank"].nil? ? cluster["rank"] : @i2_options[:rank]
+        cluster_hosts = cluster["hosts"]
 
         if @i2_options[:login_override] then
             cluster_hosts = cluster_hosts.map{|h| "#{@i2_options[:login_override]}@#{h}"}
         end
-
-        @ssh_environment.merge!(cluster["environment"].inject({}){|m, v| m.merge(v)}) if cluster["environment"]
 
         @servers += cluster_hosts
     else
@@ -38,28 +32,36 @@ def get_hosts(c)
     end
 end
 
+def set_options(config_hash, login_override=nil)
+    if login_override then
+        @i2_options[:login_override] = login_override
+    else
+        @i2_options[:login_override] = config_hash["login"].nil? ? @i2_options[:login_override] : config_hash["login"]
+    end
+
+    @i2_options[:broadcast] = config_hash["broadcast"].nil? ? @i2_options[:broadcast] : config_hash["broadcast"]
+    @i2_options[:profile] = config_hash["profile"].nil? ? @i2_options[:profile] : config_hash["profile"]
+    @i2_options[:rank] = config_hash["rank"].nil? ? @i2_options[:rank] : config_hash["rank"]
+    @i2_options[:iterm2] = config_hash["iterm2"].nil? ? @i2_options[:iterm2] : config_hash["iterm2"]
+
+    @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
+end
+
 if File.exists?(@config_file) 
     config_hash = YAML.load File.read @config_file
 
     # Read config and set defaults from config
     if config_hash["version"] && config_hash["version"].to_i >= 2 then
+        set_options(config_hash)
         @clusters = config_hash["clusters"]
-        
-        # Options from the config file
-        @i2_options[:iterm2] = config_hash["iterm2"]
-        @i2_options[:login_override] = config_hash["login"]
-        @i2_options[:broadcast] = config_hash["broadcast"]
-        @i2_options[:profile] = config_hash["profile"]
-        @i2_options[:rank] = config_hash["rank"]
-        
-        @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
-        
     else
         # Convert version 1 format to version 2
-        clusters = config_hash["clusters"].inject({}){|m, c| m[c[0]] = {"hosts" => c[1]}; m}
+        @clusters = config_hash["clusters"].inject({}){|m, c| m[c[0]] = {"hosts" => c[1]}; m}
     end
 
 end
+
+opts_from_cmdline = {}
 
 optparse = OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename(__FILE__)} [options] [(username@host [username@host] | username@cluster)]"
@@ -90,7 +92,7 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-l', '--login LOGIN',
         'SSH login name' do |u|
-        @i2_options[:login_override] = u
+        opts_from_cmdline[:login_override] = u
         
     end
     opts.on '-e', '--environment KEY=VAL',
@@ -99,49 +101,49 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-r', '--rank',
         'Send LC_RANK with the host number as environment variable' do
-        @i2_options[:rank] = true
+        opts_from_cmdline[:rank] = true
     end
 
     # iTerm2 options
     opts.on '-F', '--fullscreen',
         'Make the window fullscreen' do
-        @i2_options[:fullscreen] = true
+        opts_from_cmdline[:fullscreen] = true
     end
     opts.on '-C', '--columns COLUMNS', Integer,
         'Number of columns (rows will be calculated)' do |c|
-        if @i2_options[:rows]
+        if opts_from_cmdline[:rows]
             puts "ERROR: -C and -R can't be used at the same time"
             puts optparse.help
             exit 1
         else
-            @i2_options[:columns] = c
+            opts_from_cmdline[:columns] = c
         end
     end
     opts.on '-R', '--rows ROWS', Integer,
         'Number of rows (columns will be calculated)' do |r|
-        if @i2_options[:columns]
+        if opts_from_cmdline[:columns]
             puts "ERROR: -C and -R can't be used at the same time"
             puts optparse.help
             exit 1
         else
-            @i2_options[:rows] = r
+            opts_from_cmdline[:rows] = r
         end
     end
     opts.on '-b', '--broadcast',
         'Start with broadcast input (DANGEROUS!)' do
-        @i2_options[:broadcast] = true
+        opts_from_cmdline[:broadcast] = true
     end
     opts.on '-nb', '--nobroadcast',
         'Disable broadcast' do
-        @i2_options[:broadcast] = false
+        opts_from_cmdline[:broadcast] = false
     end
     opts.on '-p', '--profile PROFILE',
         'Name of the iTerm2 profile (default: Default)' do |p|
-        @i2_options[:profile] = p
+        opts_from_cmdline[:profile] = p
     end
     opts.on "-2", '--iterm2',
         'Use iTerm2 instead of iTerm' do
-        @i2_options[:iterm2] = true
+        opts_from_cmdline[:iterm2] = true
     end
 
 end
@@ -153,6 +155,8 @@ if ARGV.length == 1 then
 elsif ARGV.length > 1 then
     @servers = ARGV
 end
+
+@i2_options.merge!(opts_from_cmdline)
 
 if @i2_options[:login_override] then
     @servers = @servers.map{|h| "#{@i2_options[:login_override]}@#{h.gsub(/.+@/,'')}"}
