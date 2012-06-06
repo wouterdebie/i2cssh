@@ -60,12 +60,16 @@ Optional parameters can be used globablly or per cluster and include:
     login: <username>           # Use this username for login
     profile: <iTerm2 profile>   # Use this iTerm profile
     rank: (true/false)          # Enable sending LC_RANK as an environment variable
+    columns: <cols>             # Amount of columns
+    rows: <rows>                # Amount of rows
 
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
         - LC_BAR: bar
     
     iterm2: true                # Use iTerm2.app instead of iTerm.app (only available globally)
+
+Note: rows and columns can't be used together.
 
 The following precedence is used:
 

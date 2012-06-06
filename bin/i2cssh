@@ -31,7 +31,12 @@ def get_hosts(c)
 end
 
 def set_options(config_hash, login_override=nil)
-    [:broadcast, :profile, :rank, :iterm2, :login_override].each do |p|
+    if config_hash["columns"] and config_hash["rows"] then
+        puts "CONFIG ERROR: rows and columns can't be used a the same time"
+        exit 1
+    end
+
+    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows].each do |p|
         @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
