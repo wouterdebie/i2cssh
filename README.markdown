@@ -62,6 +62,7 @@ Optional parameters can be used globablly or per cluster and include:
     rank: (true/false)          # Enable sending LC_RANK as an environment variable
     columns: <cols>             # Amount of columns
     rows: <rows>                # Amount of rows
+    open_by_row: (true/false)	# Default : false - Setting true open hosts on by row rather than columns
 
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
