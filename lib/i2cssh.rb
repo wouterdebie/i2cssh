@@ -53,18 +53,34 @@ class I2Cssh
 
     def split_session
         first = true
-        2.upto @columns do
-          @sys_events.keystroke "d", :using => :command_down
-        end
-        2.upto @rows do
-          1.upto @columns do
-            @sys_events.key_code 123, :using => [:command_down, :option_down] unless first
-            first = false
-          end
-          @columns.times do |x|
-            @sys_events.keystroke "D", :using => :command_down
-            @sys_events.key_code 124, :using => [:command_down, :option_down] unless @columns - 1 == x
-          end
+        if @i2_options[:open_by_row] then
+            2.upto @rows do
+              @sys_events.keystroke "D", :using => :command_down
+            end
+            2.upto @columns do
+              1.upto @rows do
+                @sys_events.key_code 126, :using => [:command_down, :option_down] unless first
+                first = false
+              end
+              @rows.times do |x|
+                @sys_events.keystroke "d", :using => :command_down
+                @sys_events.key_code 125, :using => [:command_down, :option_down] unless @columns - 1 == x
+              end
+            end
+        else
+            2.upto @columns do
+              @sys_events.keystroke "d", :using => :command_down
+            end
+            2.upto @rows do
+              1.upto @columns do
+                @sys_events.key_code 123, :using => [:command_down, :option_down] unless first
+                first = false
+              end
+              @columns.times do |x|
+                @sys_events.keystroke "D", :using => :command_down
+                @sys_events.key_code 124, :using => [:command_down, :option_down] unless @columns - 1 == x
+              end
+            end
         end
     end
 

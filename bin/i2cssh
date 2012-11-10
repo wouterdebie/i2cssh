@@ -36,7 +36,7 @@ def set_options(config_hash, login_override=nil)
         exit 1
     end
 
-    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows].each do |p|
+    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows, :open_by_row].each do |p|
         @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
