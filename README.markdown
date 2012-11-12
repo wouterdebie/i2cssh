@@ -168,6 +168,7 @@ will result in
 ## TODO
 
 - Functional parity with csshX (as far as possible)
+- -X support in config file
 
 ## Contributing to i2cssh
 
