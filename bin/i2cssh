@@ -156,6 +156,11 @@ optparse = OptionParser.new do |opts|
         end
         opts_from_cmdline[:direction] = d.to_sym
     end
+    opts.on '-X', '--extra EXTRA_PARAM', String,
+        'Additional ssh parameters (e.g. -Xi=myidentity.pem)' do |x|
+
+         ssh_options << "-" + x.split("=").join(" ")
+    end
 
 end
 optparse.parse!

@@ -25,6 +25,7 @@ to all sessions.
     -r, --rank                       Send LC_RANK with the host number as environment variable
     -m, --machines a,b,c             Comma-separated list of hosts
     -s, --sleep SLEEP                Number of seconds to sleep between creating SSH sessions
+    -X, --extra EXTRA_PARAM          Additional ssh parameters (e.g. -Xi=myidentity.pem)
 
 i2cssh will assume you want to connect to a cluster when only one host is given.
 
