@@ -38,7 +38,7 @@ The following commands are exactly the same, however, they might serve different
 
 Using the `-l` option will override all usernames:
 
-    $ i2css -l foo user1@host1 user2@host2
+    $ i2cssh -l foo user1@host1 user2@host2
 
 This will connect to both `host1` and `host2` as the user `foo`
 
@@ -138,6 +138,28 @@ Send a LC_RANK environment variable different for each host (from 0 to n)
 ### -m, --machines a,b,c
 
 Connect to the machines a, b and c
+
+### -s, --sleep SLEEP
+
+Wait SLEEP seconds between starting each ssh session. This will take decimals as well (0.5 for half a second)
+
+### -X, --extra EXTRA
+
+Set extra ssh parameters in the form -Xk=v. For example:
+
+    i2cssh -Xi=myidentity.pem
+
+will result in 
+
+    ssh -i myidentity.pem
+
+Or,
+
+    i2cssh -Xp=2222 -XL=8080:localhost:8080
+
+will result in
+
+    ssh -p 2222 -L 8080:localhost:8080
 
 ## Known issues
 
