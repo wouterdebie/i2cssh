@@ -52,18 +52,24 @@ class I2Cssh
     end
 
     def split_session
+        splitmap = {
+            :column => {0 => "d", 1 => 123, 2 => "D", 3=> 124, :x => @columns, :y => @rows}, 
+            :row => {0 => "D", 1=> 126, 2 => "d", 3=> 125, :x => @rows, :y => @columns}
+        }
+        splitconfig = splitmap[@i2_options[:direction]]
+
         first = true
-        2.upto @columns do
-          @sys_events.keystroke "d", :using => :command_down
+        2.upto splitconfig[:x] do
+          @sys_events.keystroke splitconfig[0], :using => :command_down
         end
-        2.upto @rows do
-          1.upto @columns do
-            @sys_events.key_code 123, :using => [:command_down, :option_down] unless first
+        2.upto splitconfig[:y] do
+          1.upto splitconfig[:x] do
+            @sys_events.key_code splitconfig[1], :using => [:command_down, :option_down] unless first
             first = false
           end
-          @columns.times do |x|
-            @sys_events.keystroke "D", :using => :command_down
-            @sys_events.key_code 124, :using => [:command_down, :option_down] unless @columns - 1 == x
+          splitconfig[:x].times do |x|
+            @sys_events.keystroke splitconfig[2], :using => :command_down
+            @sys_events.key_code splitconfig[3], :using => [:command_down, :option_down] unless @columns - 1 == x
           end
         end
     end

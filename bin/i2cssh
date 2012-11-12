@@ -36,11 +36,13 @@ def set_options(config_hash, login_override=nil)
         exit 1
     end
 
-    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows].each do |p|
+    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows, :sleep, :direction].each do |p|
         @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
     @i2_options[:login_override] = login_override if login_override
+    @i2_options[:direction] ||= :column
+    @i2_options[:direction] = @i2_options[:direction].to_sym
 
     @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
 end
@@ -140,6 +142,19 @@ optparse = OptionParser.new do |opts|
     opts.on "-2", '--iterm2',
         'Use iTerm2 instead of iTerm' do
         opts_from_cmdline[:iterm2] = true
+    end
+    opts.on '-s', '--sleep SLEEP', Float,
+        'Number of seconds to sleep between creating SSH sessions' do |s|
+        opts_from_cmdline[:sleep] = s
+    end
+    opts.on "-d", '--direction DIRECTION', String,
+        'Direction that new sessions are created (default: column)' do |d|
+        unless ["row", "column"].include?(d) then
+            puts "ERROR: -d requires 'row' or 'column'"
+            puts optparse.help
+            exit 1
+        end
+        opts_from_cmdline[:direction] = d.to_sym
     end
 
 end

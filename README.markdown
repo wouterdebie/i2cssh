@@ -63,6 +63,8 @@ Optional parameters can be used globablly or per cluster and include:
     rank: (true/false)          # Enable sending LC_RANK as an environment variable
     columns: <cols>             # Amount of columns
     rows: <rows>                # Amount of rows
+    sleep: <secs>               # Seconds to sleep between creating SSH sessions
+    direction: (column/row)     # Direction that new sessions are created (default: column)
 
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
