@@ -88,7 +88,9 @@ class I2Cssh
                     send_env = "-o SendEnv=#{@ssh_environment.keys.join(",")}"
                     @term.sessions[i].write :text => "#{@ssh_environment.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
                 end
-
+                if @i2_options[:sleep] then
+                    sleep @i2_options[:sleep] * i
+                end
                 @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
                 
