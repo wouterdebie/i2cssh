@@ -19,8 +19,8 @@ def get_hosts(c)
     if cluster
         set_options(cluster, login_from_cli)
 
-        if @i2_options[:login_override] then
-            @servers += cluster["hosts"].map{|h| "#{@i2_options[:login_override]}@#{h}"}
+        if @i2_options[:login] then
+            @servers += cluster["hosts"].map{|h| "#{@i2_options[:login]}@#{h}"}
         else
             @servers += cluster["hosts"]
         end
@@ -36,11 +36,11 @@ def set_options(config_hash, login_override=nil)
         exit 1
     end
 
-    [:broadcast, :profile, :rank, :iterm2, :login_override, :columns, :rows, :sleep, :direction].each do |p|
+    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :direction].each do |p|
         @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
-    @i2_options[:login_override] = login_override if login_override
+    @i2_options[:login] = login_override if login_override
     @i2_options[:direction] ||= :column
     @i2_options[:direction] = @i2_options[:direction].to_sym
 
@@ -90,7 +90,7 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-l', '--login LOGIN',
         'SSH login name' do |u|
-        opts_from_cmdline[:login_override] = u
+        opts_from_cmdline[:login] = u
         
     end
     opts.on '-e', '--environment KEY=VAL',
@@ -174,8 +174,8 @@ end
 
 @i2_options.merge!(opts_from_cmdline)
 
-if @i2_options[:login_override] then
-    @servers = @servers.map{|h| "#{@i2_options[:login_override]}@#{h.gsub(/.+@/,'')}"}
+if @i2_options[:login] then
+    @servers = @servers.map{|h| "#{@i2_options[:login]}@#{h.gsub(/.+@/,'')}"}
 end
 
 if @servers.empty?
