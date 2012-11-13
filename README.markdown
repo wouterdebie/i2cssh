@@ -1,6 +1,6 @@
 # i2cssh
 
-i2cssh is a http://code.google.com/p/csshx/ like tool for connecting over ssh to multiple machines. But instead of creating separate windows and having
+i2cssh is a csshX (http://code.google.com/p/csshx/) like tool for connecting over ssh to multiple machines. But instead of creating separate windows and having
 a master window for input, i2cssh uses iterm2 split panes and "Send input to all sessions" (cmd-shift-i) to send commands
 to all sessions.
 
