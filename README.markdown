@@ -20,6 +20,7 @@ to all sessions.
     -nb, --nobroadcast               Disable broadcast
     -p, --profile PROFILE            Name of the iTerm2 profile (default: Default)
     -2, --iterm2                     Use iTerm2 instead of iTerm
+    -i, --itermname NAME             Name of the application to use (default: iTerm)
     -f, --file FILE                  Cluster file (one hostname per line)
     -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
     -r, --rank                       Send LC_RANK with the host number as environment variable
@@ -66,6 +67,7 @@ Optional parameters can be used globablly or per cluster and include:
     rows: <rows>                # Amount of rows
     sleep: <secs>               # Seconds to sleep between creating SSH sessions
     direction: (column/row)     # Direction that new sessions are created (default: column)
+    itermname:                  # iTerm app name (default: iTerm)
 
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
@@ -122,6 +124,10 @@ Use a specific iTerm profile
 ### -2, --iterm2
 
 Use iTerm2.app instead of iTerm.app
+
+### -i, --itermname NAME
+
+Name of the application to use (default: iTerm). It happens sometimes iTerm isn't called iTerm. Use this parameter to override what app i2cssh interacts with.
 
 ### -f, --file
 

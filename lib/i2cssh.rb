@@ -8,7 +8,7 @@ class I2Cssh
         @servers            = servers
         @ssh_environment    = ssh_environment
 
-        app_name = (i2_options[:iterm2]) ? 'iTerm2' : 'iTerm'
+        app_name = (i2_options[:iterm2]) ? 'iTerm2' : ((i2_options[:itermname]) ? i2_options[:itermname] : 'iTerm')
 
         raise Exception.new 'No servers given' if servers.empty?
 

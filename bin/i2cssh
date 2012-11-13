@@ -36,7 +36,7 @@ def set_options(config_hash, login_override=nil)
         exit 1
     end
 
-    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :direction].each do |p|
+    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :direction, :itermname].each do |p|
         @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
     end
 
@@ -142,6 +142,10 @@ optparse = OptionParser.new do |opts|
     opts.on "-2", '--iterm2',
         'Use iTerm2 instead of iTerm' do
         opts_from_cmdline[:iterm2] = true
+    end
+    opts.on "-i", '--itermname NAME', String,
+        'Name of the application to use (default: iTerm)' do |i|
+        opts_from_cmdline[:itermname] = i
     end
     opts.on '-s', '--sleep SLEEP', Float,
         'Number of seconds to sleep between creating SSH sessions' do |s|
