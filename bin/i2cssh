@@ -43,7 +43,6 @@ def set_options(config_hash, login_override=nil)
     @i2_options[:login] = login_override if login_override
     @i2_options[:direction] ||= :column
     @i2_options[:direction] = @i2_options[:direction].to_sym
-
     @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
 end
 
@@ -59,6 +58,8 @@ if File.exists?(@config_file)
         @clusters = config_hash["clusters"].inject({}){|m, c| m[c[0]] = {"hosts" => c[1]}; m}
     end
 
+else
+    set_options({})
 end
 
 optparse = OptionParser.new do |opts|
