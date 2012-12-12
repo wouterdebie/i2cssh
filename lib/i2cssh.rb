@@ -14,6 +14,9 @@ class I2Cssh
 
         @sys_events = Appscript.app.by_name('System Events')
         @iterm = Appscript.app.by_name(app_name)
+
+        @pane_menu = @sys_events.processes[app_name].menu_bars[1].menu_bar_items["Window"].menus["Window"].menu_items["Select Split Pane"].menus["Select Split Pane"]
+        @shell_menu = @sys_events.processes[app_name].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
         @term = @iterm.make(:new => :terminal)
 
         @profile = i2_options[:profile] || "Default"
@@ -52,24 +55,32 @@ class I2Cssh
     end
 
     def split_session
+        left = @pane_menu.menu_items["Select Pane Left"]
+        right = @pane_menu.menu_items["Select Pane Right"]
+        up = @pane_menu.menu_items["Select Pane Above"]
+        down = @pane_menu.menu_items["Select Pane Below"]
+
+        split_vert = @shell_menu.menu_items["Split Vertically with Current Profile"]
+        split_hori = @shell_menu.menu_items["Split Horizontally with Current Profile"]
+
         splitmap = {
-            :column => {0 => "d", 1 => 123, 2 => "D", 3=> 124, :x => @columns, :y => @rows}, 
-            :row => {0 => "D", 1=> 126, 2 => "d", 3=> 125, :x => @rows, :y => @columns}
+            :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows}, 
+            :row => {0 => split_hori, 1=> up, 2 => split_vert, 3=> down, :x => @rows, :y => @columns}
         }
         splitconfig = splitmap[@i2_options[:direction]]
 
         first = true
         2.upto splitconfig[:x] do
-          @sys_events.keystroke splitconfig[0], :using => :command_down
+          splitconfig[0].click
         end
         2.upto splitconfig[:y] do
           1.upto splitconfig[:x] do
-            @sys_events.key_code splitconfig[1], :using => [:command_down, :option_down] unless first
+            splitconfig[1].click
             first = false
           end
           splitconfig[:x].times do |x|
-            @sys_events.keystroke splitconfig[2], :using => :command_down
-            @sys_events.key_code splitconfig[3], :using => [:command_down, :option_down] unless @columns - 1 == x
+            splitconfig[2].click
+            splitconfig[3].click
           end
         end
     end
