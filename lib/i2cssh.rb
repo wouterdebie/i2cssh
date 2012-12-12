@@ -61,15 +61,19 @@ class I2Cssh
         first = true
         2.upto splitconfig[:x] do
           @sys_events.keystroke splitconfig[0], :using => :command_down
+          sleep 0.1
         end
         2.upto splitconfig[:y] do
           1.upto splitconfig[:x] do
             @sys_events.key_code splitconfig[1], :using => [:command_down, :option_down] unless first
+            sleep 0.1
             first = false
           end
           splitconfig[:x].times do |x|
             @sys_events.keystroke splitconfig[2], :using => :command_down
+            sleep 0.1
             @sys_events.key_code splitconfig[3], :using => [:command_down, :option_down] unless @columns - 1 == x
+            sleep 0.1
           end
         end
     end
