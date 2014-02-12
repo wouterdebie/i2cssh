@@ -60,8 +60,16 @@ class I2Cssh
         up = @pane_menu.menu_items["Select Pane Above"]
         down = @pane_menu.menu_items["Select Pane Below"]
 
-        split_vert = @shell_menu.menu_items["Split Vertically with Current Profile"]
-        split_hori = @shell_menu.menu_items["Split Horizontally with Current Profile"]
+
+        begin
+            split_vert = @shell_menu.menu_items["Split Vertically"]
+            split_hori = @shell_menu.menu_items["Split Horizontally"]
+            split_vert.get
+            split_hori.get
+        rescue
+            split_vert = @shell_menu.menu_items["Split Vertically with Current Profile"]
+            split_hori = @shell_menu.menu_items["Split Horizontally with Current Profile"]
+        end
 
         splitmap = {
             :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows}, 
