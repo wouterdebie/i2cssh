@@ -101,6 +101,8 @@ class I2Cssh
 
     def start_ssh
         1.upto(@rows*@columns) do |i|
+            @term.sessions[i].write :text => "/bin/bash -l"
+
             server = @servers[i-1]
             if server then
                 ssh_env = ""
