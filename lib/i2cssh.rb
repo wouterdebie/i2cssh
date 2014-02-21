@@ -25,18 +25,22 @@ class I2Cssh
         session.exec :command => "/bin/bash -l"
 
         compute_geometry
+        maximize(app_name) if i2_options[:fullscreen]
         split_session
-        maximize if i2_options[:fullscreen]
-        
         start_ssh
         enable_broadcast if i2_options[:broadcast]
     end
 
     private
-    def maximize
-      fullscreen_bounds = Appscript.app.by_name('Finder').desktop.window.bounds
-      window = @iterm.windows.get.sort_by{|x| x.id_.get}.last
-      window.bounds.set fullscreen_bounds.get
+    def maximize(app_name)
+        begin
+            # OSX >= 10.8 has different behavior for full screen. First try out old behavior.
+            fullscreen_bounds = Appscript.app.by_name('Finder').desktop.window.bounds
+            window = @iterm.windows.get.sort_by{|x| x.id_.get}.last
+            window.bounds.set fullscreen_bounds.get
+        rescue
+            @sys_events.processes[app_name].windows.first.attributes["AXFullScreen"].value.set(true)
+        end
     end
 
     def compute_geometry
@@ -45,12 +49,17 @@ class I2Cssh
         @columns = @i2_options[:columns]
 
         if @rows then
-          @columns = (count / @rows.to_f).ceil
+            @columns = (count / @rows.to_f).ceil
         elsif @columns then
-          @rows = (count / @columns.to_f).ceil
+            @rows = (count / @columns.to_f).ceil
         else
-          @columns = Math.sqrt(count).ceil
-          @rows = (count / @columns.to_f).ceil
+            @columns = Math.sqrt(count).ceil
+            @rows = (count / @columns.to_f).ceil
+        end
+        # Quick hack: iTerms default window only supports up to 11 rows and 22 columns
+        # If we surpass either one, we resort to full screen.
+        if @rows > 11 or @columns > 22 then
+            @i2_options[:fullscreen] = true
         end
     end
 
@@ -79,17 +88,17 @@ class I2Cssh
 
         first = true
         2.upto splitconfig[:x] do
-          splitconfig[0].click
+            splitconfig[0].click
         end
         2.upto splitconfig[:y] do
-          1.upto splitconfig[:x] do
-            splitconfig[1].click
-            first = false
-          end
-          splitconfig[:x].times do |x|
-            splitconfig[2].click
-            splitconfig[3].click
-          end
+            1.upto splitconfig[:x] do
+                splitconfig[1].click
+                first = false
+            end
+            splitconfig[:x].times do |x|
+                splitconfig[2].click
+                splitconfig[3].click
+            end
         end
     end
 
@@ -103,7 +112,7 @@ class I2Cssh
         1.upto(@rows*@columns) do |i|
             server = @servers[i-1]
             if server then
-                ssh_env = ""
+                send_env = ""
 
                 if @i2_options[:rank] then
                     @ssh_environment['LC_RANK'] = i-1
