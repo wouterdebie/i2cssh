@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Wouter de Bie"]
-  s.date = "2014-02-21"
+  s.date = "2014-02-23"
   s.description = "csshX like cluster ssh using iTerm2 panes"
   s.email = "wouter@evenflow.se"
   s.executables = ["i2cssh"]
