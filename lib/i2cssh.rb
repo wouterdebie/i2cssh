@@ -81,7 +81,7 @@ class I2Cssh
         end
 
         splitmap = {
-            :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows}, 
+            :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows},
             :row => {0 => split_hori, 1=> up, 2 => split_vert, 3=> down, :x => @rows, :y => @columns}
         }
         splitconfig = splitmap[@i2_options[:direction]]
@@ -127,9 +127,19 @@ class I2Cssh
                 if @i2_options[:sleep] then
                     sleep @i2_options[:sleep] * i
                 end
-                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                if (server.class == Hash) then
+                    server_name = server["name"]
+                    if (server.has_key? "login") then
+                        server_name = "#{server['login']}@#{server_name.gsub(/.+@/,'')}"
+                    end
+                    @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server_name}"
+                    if (server.has_key? "command") then
+                        @term.sessions[i].write :text => server["command"]
+                    end
+                 else
+                    @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                 end
             else
-                
                 @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
                 sleep 0.3
                 @term.sessions[i].foreground_color.set "red"

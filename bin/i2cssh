@@ -180,7 +180,16 @@ end
 @i2_options.merge!(opts_from_cmdline)
 
 if @i2_options[:login] then
-    @servers = @servers.map{|h| "#{@i2_options[:login]}@#{h.gsub(/.+@/,'')}"}
+    @servers = @servers.map { |h|
+      if (server.class == Hash) then
+        server[:login] = @i2_options[:login]
+      else
+        Hash[
+            "name" => h,
+            "login" => @i2_options[:login]
+        ]
+      end
+    }
 end
 
 if @servers.empty?
