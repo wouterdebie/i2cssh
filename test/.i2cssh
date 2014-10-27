@@ -1,0 +1,27 @@
+version: 2
+  clusters:
+    testDefault:
+        hosts:
+            - bpu-sek-web02
+    testTwoHosts:
+        hosts:
+            - bpu-sek-web02
+            - bpu-sek-web02
+    testLogin:
+        hosts:
+            - name: bpu-sek-web02
+              login: root
+    testCommands:
+        hosts:
+            - name: bpu-sek-web02
+              command: lt
+            - name: bpu-sek-web02
+              command: cat .bashrc
+    testMixed:
+        hosts:
+            - name: bpu-sek-web02
+              command: lt
+            - bpu-sek-web01
+            - name: bpu-sek-web02
+              login: root
+              command: lt
