@@ -90,7 +90,7 @@ optparse = OptionParser.new do |opts|
     end
 
     opts.on '-t', '--tab-split',
-        'Open multiple clusters in separate tabs (BETA)' do 
+        'Open multiple clusters in separate tabs' do 
         opts_from_cmdline[:tabs] = true
     end
 
