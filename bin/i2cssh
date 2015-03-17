@@ -158,12 +158,7 @@ optparse = OptionParser.new do |opts|
     end
     opts.on '-b', '--broadcast',
         'Start with broadcast input (DANGEROUS!)' do
-        if opts_from_cmdline[:tabs] 
-            puts 'Disabling broadcast for tab split mode...'
-            opts_from_cmdline[:broadcast] = false
-        else
-            opts_from_cmdline[:broadcast] = true
-        end
+        opts_from_cmdline[:broadcast] = true
     end
     opts.on '-nb', '--nobroadcast',
         'Disable broadcast' do
