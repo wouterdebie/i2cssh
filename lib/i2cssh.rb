@@ -1,5 +1,4 @@
 require 'appscript'
-
 class I2Cssh
     def initialize servers, ssh_options, i2_options, ssh_environment
         @ssh_prefix         = "ssh " + ssh_options.join(' ')
@@ -8,7 +7,7 @@ class I2Cssh
         @servers            = servers
         @ssh_environment    = ssh_environment
 
-        app_name = (i2_options[:iterm2]) ? 'iTerm2' : ((i2_options[:itermname]) ? i2_options[:itermname] : 'iTerm')
+        app_name = (i2_options.first[:iterm2]) ? 'iTerm2' : ((i2_options.first[:itermname]) ? i2_options.first[:itermname] : 'iTerm')
 
         raise Exception.new 'No servers given' if servers.empty?
 
@@ -19,16 +18,26 @@ class I2Cssh
         @shell_menu = @sys_events.processes[app_name].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
         @term = @iterm.make(:new => :terminal)
 
-        @profile = i2_options[:profile] || "Default"
+        @profile = i2_options.first[:profile] || "Default"
 
-        session = @term.sessions.after.make :new => :session
-        session.exec :command => "/bin/bash -l"
+        @term.launch_(:session => "Default Session")
+        
+        maximize(app_name) if i2_options.first[:fullscreen]
 
-        compute_geometry
-        maximize(app_name) if i2_options[:fullscreen]
-        split_session
-        start_ssh
-        enable_broadcast if i2_options[:broadcast]
+
+        while !@servers.empty? do
+            compute_geometry
+            split_session
+            start_ssh
+            enable_broadcast if i2_options.first[:broadcast]
+            @servers.shift
+            @i2_options.shift
+            @ssh_environment.shift
+
+            if !@servers.empty?  && @i2_options.first[:tabs] then
+                @term.launch_(:session => "Default Session")
+            end
+        end
     end
 
     private
@@ -44,9 +53,17 @@ class I2Cssh
     end
 
     def compute_geometry
-        count = @servers.size
-        @rows = @i2_options[:rows]
-        @columns = @i2_options[:columns]
+        if @rows_old && @columns_old then
+            @rows_old = @rows
+            @columns_old = @columns
+        else
+            @rows_old = 0
+            @columns_old = 0
+        end
+
+        count = @servers.first.size
+        @rows = @i2_options.first[:rows]
+        @columns = @i2_options.first[:columns]
 
         if @rows then
             @columns = (count / @rows.to_f).ceil
@@ -58,8 +75,8 @@ class I2Cssh
         end
         # Quick hack: iTerms default window only supports up to 11 rows and 22 columns
         # If we surpass either one, we resort to full screen.
-        if @rows > 11 or @columns > 22 then
-            @i2_options[:fullscreen] = true
+    if @rows > 11 or @columns > 22 then
+            @i2_options.first[:fullscreen] = true
         end
     end
 
@@ -84,7 +101,7 @@ class I2Cssh
             :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows}, 
             :row => {0 => split_hori, 1=> up, 2 => split_vert, 3=> down, :x => @rows, :y => @columns}
         }
-        splitconfig = splitmap[@i2_options[:direction]]
+        splitconfig = splitmap[@i2_options.first[:direction]]
 
         first = true
         2.upto splitconfig[:x] do
@@ -110,30 +127,30 @@ class I2Cssh
 
     def start_ssh
         1.upto(@rows*@columns) do |i|
-            @term.sessions[i].write :text => "/bin/bash -l"
+            @term.sessions[@rows_old*@columns_old + i].write :text => "/usr/bin/env bash -l"
 
-            server = @servers[i-1]
+            server = @servers.first[i-1]
             if server then
                 send_env = ""
 
-                if @i2_options[:rank] then
-                    @ssh_environment['LC_RANK'] = i-1
+                if @i2_options.first[:rank] then
+                    @ssh_environment.first['LC_RANK'] = i-1
                 end
 
-                if !@ssh_environment.empty? then
-                    send_env = "-o SendEnv=#{@ssh_environment.keys.join(",")}"
-                    @term.sessions[i].write :text => "#{@ssh_environment.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
+                if !@ssh_environment.empty? && !@ssh_environment.first.empty? then
+                    send_env = "-o SendEnv=#{@ssh_environment.first.keys.join(",")}"
+                    @term.sessions[@rows_old*@columns_old + i].write :text => "#{@ssh_environment.first.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
                 end
-                if @i2_options[:sleep] then
-                    sleep @i2_options[:sleep] * i
+                if @i2_options.first[:sleep] then
+                    sleep @i2_options.first[:sleep] * i
                 end
-                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                @term.sessions[@rows_old*@columns_old + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
                 
-                @term.sessions[i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
+                @term.sessions[@rows_old*@columns_old + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
                 sleep 0.3
-                @term.sessions[i].foreground_color.set "red"
-                @term.sessions[i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
+                @term.sessions[@rows_old*@columns_old + i].foreground_color.set "red"
+                @term.sessions[@rows_old*@columns_old + i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
             end
         end
     end
