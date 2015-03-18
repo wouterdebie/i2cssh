@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 require 'rubygems'
 require 'optparse'
 require 'i2cssh'
@@ -6,51 +6,71 @@ require 'yaml'
 
 @config_file = File.expand_path "~/.i2csshrc"
 
-@i2_options, ssh_options, @servers, @clusters, @ssh_environment, opts_from_cmdline = {}, [], [], {}, {}, {}
+@i2_options, ssh_options, @servers, @clusters, @ssh_environment, opts_from_cmdline = [], [], [], {}, [], {} 
 
 def get_hosts(c)
-    if c =~ /(.+)@(.+)/ then
-        login_from_cli = $1
-        c = $2
-    end
+    c.each do |clus| 
 
-    cluster = @clusters[c]
-
-    if cluster
-        set_options(cluster, login_from_cli)
-
-        if @i2_options[:login] then
-            @servers += cluster["hosts"].map{|h| "#{@i2_options[:login]}@#{h}"}
-        else
-            @servers += cluster["hosts"]
+        if clus =~ /(.+)@(.+)/ 
+            login_from_cli = $1
+            clus = $2
         end
-    else
-        puts "ERROR: unknown cluster #{c}. Check your #{@config_file}"
-        exit 1
+
+        cluster = @clusters[clus]
+        if cluster
+            set_options(cluster, login_from_cli)
+
+            if @i2_options.last[:login] 
+                @servers << cluster["hosts"].map{|h| "#{@i2_options.last[:login]}@#{h}"}
+            else
+                @servers << cluster["hosts"]
+            end
+        else
+            puts "ERROR: unknown cluster #{c}. Check your #{@config_file}"
+            exit 1
+        end
     end
+    
 end
 
 def set_options(config_hash, login_override=nil)
-    if config_hash["columns"] and config_hash["rows"] then
+    if config_hash["columns"] and config_hash["rows"] 
         puts "CONFIG ERROR: rows and columns can't be used at the same time"
         exit 1
     end
-
-    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :direction, :itermname].each do |p|
-        @i2_options[p] = config_hash[p.to_s].nil? ? @i2_options[p] : config_hash[p.to_s]
+    
+    if @i2_options.size == 0 
+        @i2_options << {}
+    else 
+        # The first member includes the default options from the conf file
+        @i2_options << @i2_options.first.clone
     end
 
-    @i2_options[:login] = login_override if login_override
-    @i2_options[:direction] ||= :column
-    @i2_options[:direction] = @i2_options[:direction].to_sym
-    @ssh_environment.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)}) if config_hash["environment"]
+    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :direction, :itermname].each do |p|
+        @i2_options.last[p] = config_hash[p.to_s].nil? ? @i2_options.last[p] : config_hash[p.to_s]
+    end
+    
+    @i2_options.last[:login] = login_override if login_override
+    @i2_options.last[:direction] ||= :column
+    @i2_options.last[:direction] = @i2_options.last[:direction].to_sym
+    if config_hash["environment"] 
+        if @ssh_environment.empty? 
+            @ssh_environment << {}
+        else 
+            # We have some global env so copy it
+            @ssh_environment << @ssh_environment.first.clone
+        end
+
+        @ssh_environment.last.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)})
+    end
+
 end
 
 if File.exists?(@config_file) 
     config_hash = YAML.load File.read @config_file
 
     # Read config and set defaults from config
-    if config_hash["version"] && config_hash["version"].to_i >= 2 then
+    if config_hash["version"] && config_hash["version"].to_i >= 2 
         set_options(config_hash)
         @clusters = config_hash["clusters"]
     else
@@ -62,24 +82,51 @@ else
     set_options({})
 end
 
+
 optparse = OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename(__FILE__)} [options] [(username@host [username@host] | username@cluster)]"
 
     # Check if we have a cluster. 
-    opts.on '-c', '--cluster CLUSTERNAME',
-        'Name of the cluster specified in ~/.i2csshrc' do |c|
+    opts.on '-c', '--clusters clus1,clus2', Array,
+        'Comma-separated list of clusters specified in ~/.i2csshrc' do |c|
         get_hosts(c)
     end
 
+
     opts.on '-m', '--machines a,b,c', Array,
         'Comma-separated list of hosts' do |h|
-        @servers += h
+        
+        # Add to servers array and get a clone of default options
+        @servers << h
+        @i2_options << @i2_options.first.clone
+        if @ssh_environment.empty?
+            @ssh_environment << {}
+        else
+            @ssh_environment << @ssh_environment.first.clone
+        end
     end
 
     # Hosts
     opts.on '-f', '--file FILE',
         'Cluster file (one hostname per line)' do |f|
-        @servers += File.read(f).split "\n"
+        @servers << File.read(f).split("\n")
+        @i2_options << @i2_options.first.clone
+        if @ssh_environment.empty?
+            @ssh_environment << {}
+        else
+            @ssh_environment << @ssh_environment.first.clone
+        end
+    end
+
+    opts.on '-t', '--tab-split',
+            'Split servers/clusters into tabs (group arguments)' do 
+        opts_from_cmdline[:tabs] = true
+    end
+
+    opts.on '-T', '--tab-split-nogroup',
+            'Split servers/clusters into tabs (don\'t group arguments)' do 
+        opts_from_cmdline[:tabs] = true
+        opts_from_cmdline[:tabs_nogroup] = true
     end
 
     # Command line options override config file
@@ -89,15 +136,19 @@ optparse = OptionParser.new do |opts|
         'Enable SSH agent forwarding' do
         ssh_options << '-A'
     end
+
     opts.on '-l', '--login LOGIN',
         'SSH login name' do |u|
         opts_from_cmdline[:login] = u
         
     end
+
     opts.on '-e', '--environment KEY=VAL',
         'Send environment vars (comma-separated list, need to start with LC_)' do |e|
-        @ssh_environment = e.split(",").inject({}) {|m, x| key, val = x.split("="); m[key] = val; m}
+        #Overwrite global ssh environment from config file
+        @ssh_environment[0] =  e.split(",").inject({}) {|m, x| key, val = x.split("="); m[key] = val; m}
     end
+
     opts.on '-r', '--rank',
         'Send LC_RANK with the host number as environment variable' do
         opts_from_cmdline[:rank] = true
@@ -108,6 +159,7 @@ optparse = OptionParser.new do |opts|
         'Make the window fullscreen' do
         opts_from_cmdline[:fullscreen] = true
     end
+
     opts.on '-C', '--columns COLUMNS', Integer,
         'Number of columns (rows will be calculated)' do |c|
         if opts_from_cmdline[:rows]
@@ -154,7 +206,7 @@ optparse = OptionParser.new do |opts|
     end
     opts.on "-d", '--direction DIRECTION', String,
         'Direction that new sessions are created (default: column)' do |d|
-        unless ["row", "column"].include?(d) then
+        unless ["row", "column"].include?(d) 
             puts "ERROR: -d requires 'row' or 'column'"
             puts optparse.help
             exit 1
@@ -170,18 +222,64 @@ optparse = OptionParser.new do |opts|
 end
 optparse.parse!
 
-if ARGV.length == 1 then
-    c = ARGV[0]
+if opts_from_cmdline[:tabs] 
+    puts 'Disabling broadcast for tab split mode...'
+    opts_from_cmdline[:broadcast] = false
+end
+
+# One argument = one cluster
+if ARGV.length == 1 
+    c = [ARGV[0]]
     get_hosts(c)
-elsif ARGV.length > 1 then
-    @servers = ARGV
+
+# Otherwise we have a list of hosts
+elsif ARGV.length > 1 
+    if opts_from_cmdline[:tabs_nogroup] 
+        ARGV.each do |serv|
+            @servers << [serv]
+            if @i2_options.size > 1 # We added stuff in with cmdline options
+                @i2_options << @i2_options.first.clone
+                if @ssh_environment.empty?
+                    @ssh_environment << {}
+                else
+                    @ssh_environment << @ssh_environment.first.clone
+                end
+            end
+        end 
+    else
+        @servers << ARGV
+        if @i2_options.size > 1 # We added stuff in with cmdline options
+            @i2_options << @i2_options.first.clone
+            if @ssh_environment.empty?
+                @ssh_environment << {}
+            else
+                @ssh_environment << @ssh_environment.first.clone
+            end
+        end
+    end
 end
 
-@i2_options.merge!(opts_from_cmdline)
 
-if @i2_options[:login] then
-    @servers = @servers.map{|h| "#{@i2_options[:login]}@#{h.gsub(/.+@/,'')}"}
+# Drop default options
+if @i2_options.size > @servers.size
+    @i2_options.shift
 end
+
+if @ssh_environment.size > @servers.size 
+    @ssh_environment.shift
+end
+
+
+@i2_options.each do |opt| 
+    opt.merge!(opts_from_cmdline)
+end
+
+@i2_options.each_with_index do |opt, i| 
+    if opt[:login] 
+        @servers[i] = @servers[i].map{|h| "#{opt[:login]}@#{h.gsub(/.+@/,'')}"}
+    end    
+end
+
 
 if @servers.empty?
     puts "ERROR: no servers given"
