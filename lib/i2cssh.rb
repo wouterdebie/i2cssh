@@ -3,7 +3,7 @@ class I2Cssh
     def initialize servers, ssh_options, i2_options, ssh_environment
         @ssh_prefix         = "ssh " + ssh_options.join(' ')
         @ssh_options        = ssh_options
-        @i2_options         = i2_options
+        @i2_options         = i2_options.clone
         @servers            = servers
         @ssh_environment    = ssh_environment
 
@@ -35,9 +35,11 @@ class I2Cssh
             @ssh_environment.shift
 
             if !@servers.empty?  && @i2_options.first[:tabs] then
+                # By default, a new session = a new tab
                 @term.launch_(:session => "Default Session")
             end
         end
+        @term.select(@term.sessions[1])
     end
 
     private
@@ -53,17 +55,24 @@ class I2Cssh
     end
 
     def compute_geometry
-        if @rows_old && @columns_old then
-            @rows_old = @rows
-            @columns_old = @columns
+        # Keep track of session index for multi-tab mode
+        if @session_index then
+            @session_index += @rows*@columns
         else
-            @rows_old = 0
-            @columns_old = 0
+            @session_index = 0
         end
 
-        count = @servers.first.size
-        @rows = @i2_options.first[:rows]
-        @columns = @i2_options.first[:columns]
+        # Create geometry when combining and ignore rows/columns preference
+        if @servers.size > 1 && !@i2_options.first[:tabs]
+            count = 0
+            @servers.each do |srv|
+                count += srv.size
+            end
+        else
+            count = @servers.first.size
+            @rows = @i2_options.first[:rows]
+            @columns = @i2_options.first[:columns]
+        end
 
         if @rows then
             @columns = (count / @rows.to_f).ceil
@@ -75,7 +84,7 @@ class I2Cssh
         end
         # Quick hack: iTerms default window only supports up to 11 rows and 22 columns
         # If we surpass either one, we resort to full screen.
-    if @rows > 11 or @columns > 22 then
+        if @rows > 11 or @columns > 22 then
             @i2_options.first[:fullscreen] = true
         end
     end
@@ -126,10 +135,26 @@ class I2Cssh
     end
 
     def start_ssh
-        1.upto(@rows*@columns) do |i|
-            @term.sessions[@rows_old*@columns_old + i].write :text => "/usr/bin/env bash -l"
+        old_size = 0
 
-            server = @servers.first[i-1]
+        1.upto(@rows*@columns) do |i|
+            @term.sessions[@session_index + i].write :text => "/usr/bin/env bash -l"
+            
+            # Without the tab flag, combine all servers and clusters into one window
+            if !@servers.empty? && (i - old_size) > @servers.first.size
+                old_size = @servers.first.size
+                @servers.shift
+                @i2_options.shift
+                @ssh_environment.shift
+            end
+
+            if @servers.empty?
+                server = nil
+            else
+                server = @servers.first[i-old_size-1]
+            end
+
+
             if server then
                 send_env = ""
 
@@ -139,18 +164,18 @@ class I2Cssh
 
                 if !@ssh_environment.empty? && !@ssh_environment.first.empty? then
                     send_env = "-o SendEnv=#{@ssh_environment.first.keys.join(",")}"
-                    @term.sessions[@rows_old*@columns_old + i].write :text => "#{@ssh_environment.first.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
+                    @term.sessions[@session_index + i].write :text => "#{@ssh_environment.first.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
                 end
                 if @i2_options.first[:sleep] then
                     sleep @i2_options.first[:sleep] * i
                 end
-                @term.sessions[@rows_old*@columns_old + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
                 
-                @term.sessions[@rows_old*@columns_old + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
+                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
                 sleep 0.3
-                @term.sessions[@rows_old*@columns_old + i].foreground_color.set "red"
-                @term.sessions[@rows_old*@columns_old + i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
+                @term.sessions[@session_index + i].foreground_color.set "red"
+                @term.sessions[@session_index + i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
             end
         end
     end
