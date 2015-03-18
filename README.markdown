@@ -23,7 +23,7 @@ to all sessions.
     -C, --columns COLUMNS            Number of columns (rows will be calculated)
     -R, --rows ROWS                  Number of rows (columns will be calculated)
     -b, --broadcast                  Start with broadcast input (DANGEROUS!)
-    -n, --nobroadcast                Disable broadcast
+    -nb, --nobroadcast               Disable broadcast
     -p, --profile PROFILE            Name of the iTerm2 profile (default: Default)
     -2, --iterm2                     Use iTerm2 instead of iTerm
     -i, --itermname NAME             Name of the application to use (default: iTerm)
