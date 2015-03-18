@@ -87,9 +87,9 @@ optparse = OptionParser.new do |opts|
     opts.banner = "Usage: #{File.basename(__FILE__)} [options] [(username@host [username@host] | username@cluster)]"
 
     # Check if we have a cluster. 
-    opts.on '-c', '--cluster CLUSTERNAME',
-        'Name of the cluster specified in ~/.i2csshrc' do |c|
-        get_hosts([c])
+    opts.on '-c', '--clusters clus1,clus2', Array,
+        'Comma-separated list of clusters specified in ~/.i2csshrc' do |c|
+        get_hosts(c)
     end
 
 
@@ -106,11 +106,6 @@ optparse = OptionParser.new do |opts|
         end
     end
 
-    opts.on '-M', '--multi-cluster clus1,clus2', Array,
-        'Comma-separated list of clusters' do |cls|
-        get_hosts(cls)
-    end
-
     # Hosts
     opts.on '-f', '--file FILE',
         'Cluster file (one hostname per line)' do |f|
@@ -124,12 +119,12 @@ optparse = OptionParser.new do |opts|
     end
 
     opts.on '-t', '--tab-split',
-            'Split servers/clusters by tabs (group arguments)' do 
+            'Split servers/clusters into tabs (group arguments)' do 
         opts_from_cmdline[:tabs] = true
     end
 
     opts.on '-T', '--tab-split-nogroup',
-            'Split servers/clusters by tabs (don\'t group arguments)' do 
+            'Split servers/clusters into tabs (don\'t group arguments)' do 
         opts_from_cmdline[:tabs] = true
         opts_from_cmdline[:tabs_nogroup] = true
     end

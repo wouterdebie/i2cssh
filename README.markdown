@@ -10,11 +10,11 @@ to all sessions.
 
 ## Usage
     Usage: i2cssh [options] [(username@host [username@host] | username@cluster)]
-    -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
-    -M, --multi-cluster clus1,clus2  Comma-separated list of clusters
+    -c, --clusters clus1,clus2       Comma-separated list of clusters specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
     -f, --file FILE                  Cluster file (one hostname per line)
-    -t, --tab-split                  Split servers/clusters by tabs
+    -t, --tab-split                  Split servers/clusters into tabs (group arguments)
+    -T, --tab-split-nogroup          Split servers/clusters into tabs (don't group arguments)
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -e, --environment KEY=VAL        Send environment vars (comma-separated list, need to start with LC_)
@@ -40,7 +40,7 @@ The following commands are exactly the same, however, they might serve different
     $ i2cssh -m user1@host1,user2@host2
     $ i2cssh user1@host1 user2@host2
 
-You can combine these flags and use them multiple times:
+You can combine these options and use them multiple times:
 
     $ i2cssh -m user1@host1,user2@host2 -m user3@host3 user4@host4 user5@host5
 
@@ -64,7 +64,7 @@ The `i2csshrc` file is a YAML formatted file that contains the following structu
           - host1
           - host2
 
-Optional parameters can be used globablly or per cluster and include:
+Optional parameters can be used globally or per cluster and include:
 
     broadcast: (true/false)     # Enable/disable broadcast on start
     login: <username>           # Use this username for login
@@ -140,9 +140,9 @@ Name of the application to use (default: iTerm). It happens sometimes iTerm isn'
 
 Will read nodes from a file. These will be added to any hosts specified on the command line or in the config
 
-### -c, --cluster
+### -c, --clusters clus1,clus2
 
-Connect to a cluster that is specified in the config
+Connect to one or more clusters that are specified in the config 
 
 ### -r, --rank
 
@@ -151,6 +151,16 @@ Send a LC_RANK environment variable different for each host (from 0 to n)
 ### -m, --machines a,b,c
 
 Connect to the machines a, b and c
+
+### -t, --tab-split
+
+Split servers/clusters into tabs, grouping arguments. 
+Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, all the arguments are in one tab.
+
+### -T, --tab-split-nogroup
+
+Split servers/clusters into tabs, *not* grouping arguments. 
+Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, each argument is in its own tab.
 
 ### -s, --sleep SLEEP
 
