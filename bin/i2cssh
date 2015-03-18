@@ -92,10 +92,6 @@ optparse = OptionParser.new do |opts|
         get_hosts([c])
     end
 
-    opts.on '-M', '--multi-cluster clus1,clus2', Array,
-        'Comma-separated list of clusters' do |cls|
-        get_hosts(cls)
-    end
 
     opts.on '-m', '--machines a,b,c', Array,
         'Comma-separated list of hosts' do |h|
@@ -108,6 +104,11 @@ optparse = OptionParser.new do |opts|
         else
             @ssh_environment << @ssh_environment.first.clone
         end
+    end
+
+    opts.on '-M', '--multi-cluster clus1,clus2', Array,
+        'Comma-separated list of clusters' do |cls|
+        get_hosts(cls)
     end
 
     # Hosts
@@ -123,8 +124,14 @@ optparse = OptionParser.new do |opts|
     end
 
     opts.on '-t', '--tab-split',
-            'Split servers/clusters by tabs' do 
+            'Split servers/clusters by tabs (group arguments)' do 
         opts_from_cmdline[:tabs] = true
+    end
+
+    opts.on '-T', '--tab-split-nogroup',
+            'Split servers/clusters by tabs (don\'t group arguments)' do 
+        opts_from_cmdline[:tabs] = true
+        opts_from_cmdline[:tabs_nogroup] = true
     end
 
     # Command line options override config file
@@ -232,13 +239,27 @@ if ARGV.length == 1
 
 # Otherwise we have a list of hosts
 elsif ARGV.length > 1 
-    @servers << ARGV
-    if @i2_options.size > 1 # We added stuff in with cmdline options
-        @i2_options << @i2_options.first.clone
-        if @ssh_environment.empty?
-            @ssh_environment << {}
-        else
-            @ssh_environment << @ssh_environment.first.clone
+    if opts_from_cmdline[:tabs_nogroup] 
+        ARGV.each do |serv|
+            @servers << [serv]
+            if @i2_options.size > 1 # We added stuff in with cmdline options
+                @i2_options << @i2_options.first.clone
+                if @ssh_environment.empty?
+                    @ssh_environment << {}
+                else
+                    @ssh_environment << @ssh_environment.first.clone
+                end
+            end
+        end 
+    else
+        @servers << ARGV
+        if @i2_options.size > 1 # We added stuff in with cmdline options
+            @i2_options << @i2_options.first.clone
+            if @ssh_environment.empty?
+                @ssh_environment << {}
+            else
+                @ssh_environment << @ssh_environment.first.clone
+            end
         end
     end
 end

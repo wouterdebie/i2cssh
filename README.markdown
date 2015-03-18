@@ -9,23 +9,26 @@ to all sessions.
     $ gem install i2cssh
 
 ## Usage
-    Usage: i2cssh [options]  [(username@host [username@host] | username@cluster)]
+    Usage: i2cssh [options] [(username@host [username@host] | username@cluster)]
+    -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
+    -M, --multi-cluster clus1,clus2  Comma-separated list of clusters
+    -m, --machines a,b,c             Comma-separated list of hosts
+    -f, --file FILE                  Cluster file (one hostname per line)
+    -t, --tab-split                  Split servers/clusters by tabs
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -e, --environment KEY=VAL        Send environment vars (comma-separated list, need to start with LC_)
+    -r, --rank                       Send LC_RANK with the host number as environment variable
     -F, --fullscreen                 Make the window fullscreen
     -C, --columns COLUMNS            Number of columns (rows will be calculated)
     -R, --rows ROWS                  Number of rows (columns will be calculated)
     -b, --broadcast                  Start with broadcast input (DANGEROUS!)
-    -nb, --nobroadcast               Disable broadcast
+    -n, --nobroadcast                Disable broadcast
     -p, --profile PROFILE            Name of the iTerm2 profile (default: Default)
     -2, --iterm2                     Use iTerm2 instead of iTerm
     -i, --itermname NAME             Name of the application to use (default: iTerm)
-    -f, --file FILE                  Cluster file (one hostname per line)
-    -c, --cluster CLUSTERNAME        Name of the cluster specified in ~/.i2csshrc
-    -r, --rank                       Send LC_RANK with the host number as environment variable
-    -m, --machines a,b,c             Comma-separated list of hosts
     -s, --sleep SLEEP                Number of seconds to sleep between creating SSH sessions
+    -d, --direction DIRECTION        Direction that new sessions are created (default: column)
     -X, --extra EXTRA_PARAM          Additional ssh parameters (e.g. -Xi=myidentity.pem)
 
 i2cssh will assume you want to connect to a cluster when only one host is given.
@@ -36,6 +39,10 @@ The following commands are exactly the same, however, they might serve different
 
     $ i2cssh -m user1@host1,user2@host2
     $ i2cssh user1@host1 user2@host2
+
+You can combine these flags and use them multiple times:
+
+    $ i2cssh -m user1@host1,user2@host2 -m user3@host3 user4@host4 user5@host5
 
 Using the `-l` option will override all usernames:
 
