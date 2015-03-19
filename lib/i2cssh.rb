@@ -141,7 +141,7 @@ class I2Cssh
             @term.sessions[@session_index + i].write :text => "/usr/bin/env bash -l"
             
             # Without the tab flag, combine all servers and clusters into one window
-            if !@servers.empty? && (i - old_size) > @servers.first.size
+            if !@servers.empty? && (i - old_size) > @servers.first.size && !@i2_options.first[:tabs]
                 old_size = @servers.first.size
                 @servers.shift
                 @i2_options.shift
