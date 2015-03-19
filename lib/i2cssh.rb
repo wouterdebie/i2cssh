@@ -34,7 +34,7 @@ class I2Cssh
             @i2_options.shift
             @ssh_environment.shift
 
-            if !@servers.empty?  && @i2_options.first[:tabs] then
+            if !@servers.empty?  && i2_options.first[:tabs] then
                 # By default, a new session = a new tab
                 @term.launch_(:session => "Default Session")
             end

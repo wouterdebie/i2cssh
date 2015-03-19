@@ -62,6 +62,8 @@ def set_options(config_hash, login_override=nil)
         end
 
         @ssh_environment.last.merge!(config_hash["environment"].inject({}){|m, v| m.merge(v)})
+    else
+        @ssh_environment << {}
     end
 
 end
@@ -237,14 +239,12 @@ elsif ARGV.length > 1
     if opts_from_cmdline[:tabs_nogroup] 
         ARGV.each do |serv|
             @servers << [serv]
-            if @i2_options.size > 1 # We added stuff in with cmdline options
                 @i2_options << @i2_options.first.clone
                 if @ssh_environment.empty?
                     @ssh_environment << {}
                 else
                     @ssh_environment << @ssh_environment.first.clone
                 end
-            end
         end 
     else
         @servers << ARGV
@@ -286,5 +286,6 @@ if @servers.empty?
     puts optparse.help
     exit
 end
+
 
 I2Cssh.new @servers, ssh_options, @i2_options, @ssh_environment
