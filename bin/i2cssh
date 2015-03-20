@@ -259,7 +259,6 @@ elsif ARGV.length > 1
     end
 end
 
-
 # Drop default options
 if @i2_options.size > @servers.size
     @i2_options.shift
