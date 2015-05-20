@@ -220,7 +220,11 @@ optparse = OptionParser.new do |opts|
 
          ssh_options << "-" + x.split("=").join(" ")
     end
-
+    opts.on '-g', '--gateway HOST', String,
+        'Multihop SSH connection gateway string (e.g. username@gateway) - usually used with -A' do |g|
+            # ssh_gateway = g
+            opts_from_cmdline[:gateway] = g
+    end
 end
 optparse.parse!
 
@@ -276,7 +280,11 @@ end
 @i2_options.each_with_index do |opt, i| 
     if opt[:login] 
         @servers[i] = @servers[i].map{|h| "#{opt[:login]}@#{h.gsub(/.+@/,'')}"}
-    end    
+    end
+    if opt[:gateway]
+        puts opt[:gateway]
+        @servers[i] = @servers[i].map{|h| "#{opt[:gateway]} -t ssh #{h}"}
+    end
 end
 
 
