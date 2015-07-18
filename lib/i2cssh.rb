@@ -7,23 +7,18 @@ class I2Cssh
         @servers            = servers
         @ssh_environment    = ssh_environment
 
-        app_name = (i2_options.first[:iterm2]) ? 'iTerm2' : ((i2_options.first[:itermname]) ? i2_options.first[:itermname] : 'iTerm')
-
         raise Exception.new 'No servers given' if servers.empty?
 
         @sys_events = Appscript.app.by_name('System Events')
-        @iterm = Appscript.app.by_name(app_name)
+        @iterm = Appscript.app.by_name("iTerm")
 
-        @pane_menu = @sys_events.processes[app_name].menu_bars[1].menu_bar_items["Window"].menus["Window"].menu_items["Select Split Pane"].menus["Select Split Pane"]
-        @shell_menu = @sys_events.processes[app_name].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
-        @term = @iterm.make(:new => :terminal)
+        @pane_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Window"].menus["Window"].menu_items["Select Split Pane"].menus["Select Split Pane"]
+        @shell_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
 
         @profile = i2_options.first[:profile] || "Default"
 
-        @term.launch_(:session => "Default Session")
-        
-        maximize(app_name) if i2_options.first[:fullscreen]
-
+        @iterm.create_window_with_profile(@profile, :command => "/usr/bin/env bash -l")
+        @window = @iterm.current_window
 
         while !@servers.empty? do
             compute_geometry
@@ -35,11 +30,12 @@ class I2Cssh
             @ssh_environment.shift
 
             if !@servers.empty?  && i2_options.first[:tabs] then
-                # By default, a new session = a new tab
-                @term.launch_(:session => "Default Session")
+                # @iterm.create_tab(@profile)
+                @window.create_tab_with_default_profile()
+                @session_index = 0
             end
         end
-        @term.select(@term.sessions[1])
+        @window.select(@window.tabs[1])
     end
 
     private
@@ -55,13 +51,6 @@ class I2Cssh
     end
 
     def compute_geometry
-        # Keep track of session index for multi-tab mode
-        if @session_index then
-            @session_index += @rows*@columns
-        else
-            @session_index = 0
-        end
-
         # Create geometry when combining and ignore rows/columns preference
         if @servers.size > 1 && !@i2_options.first[:tabs]
             count = 0
@@ -95,26 +84,18 @@ class I2Cssh
         up = @pane_menu.menu_items["Select Pane Above"]
         down = @pane_menu.menu_items["Select Pane Below"]
 
-
-        begin
-            split_vert = @shell_menu.menu_items["Split Vertically"]
-            split_hori = @shell_menu.menu_items["Split Horizontally"]
-            split_vert.get
-            split_hori.get
-        rescue
-            split_vert = @shell_menu.menu_items["Split Vertically with Current Profile"]
-            split_hori = @shell_menu.menu_items["Split Horizontally with Current Profile"]
-        end
+        split_vert = lambda { @window.current_session.split_vertically_with_same_profile }
+        split_hori = lambda { @window.current_session.split_horizontally_with_same_profile }
 
         splitmap = {
-            :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows}, 
+            :column => {0 => split_vert, 1 => left, 2 => split_hori, 3=> right, :x => @columns, :y => @rows},
             :row => {0 => split_hori, 1=> up, 2 => split_vert, 3=> down, :x => @rows, :y => @columns}
         }
         splitconfig = splitmap[@i2_options.first[:direction]]
 
         first = true
         2.upto splitconfig[:x] do
-            splitconfig[0].click
+            splitconfig[0].call
         end
         2.upto splitconfig[:y] do
             1.upto splitconfig[:x] do
@@ -122,7 +103,7 @@ class I2Cssh
                 first = false
             end
             splitconfig[:x].times do |x|
-                splitconfig[2].click
+                splitconfig[2].call
                 splitconfig[3].click
             end
         end
@@ -138,8 +119,10 @@ class I2Cssh
         old_size = 0
 
         1.upto(@rows*@columns) do |i|
-            @term.sessions[@session_index + i].write :text => "/usr/bin/env bash -l"
-            
+            tab = @window.current_tab
+            session = tab.sessions[i]
+            session.write :text => "/usr/bin/env bash -l"
+
             # Without the tab flag, combine all servers and clusters into one window
             if !@servers.empty? && (i - old_size) > @servers.first.size && !@i2_options.first[:tabs]
                 old_size = @servers.first.size
@@ -164,18 +147,18 @@ class I2Cssh
 
                 if !@ssh_environment.empty? && !@ssh_environment.first.empty? then
                     send_env = "-o SendEnv=#{@ssh_environment.first.keys.join(",")}"
-                    @term.sessions[@session_index + i].write :text => "#{@ssh_environment.first.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
+                    session.write :text => "#{@ssh_environment.first.map{|k,v| "export #{k}=#{v}"}.join('; ')}"
                 end
                 if @i2_options.first[:sleep] then
                     sleep @i2_options.first[:sleep] * i
                 end
-                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
-                
-                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
+
+                session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
                 sleep 0.3
-                @term.sessions[@session_index + i].foreground_color.set "red"
-                @term.sessions[@session_index + i].write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
+                session.foreground_color.set ([65535,0,0])
+                session.write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
             end
         end
     end
