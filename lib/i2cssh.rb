@@ -169,7 +169,7 @@ class I2Cssh
                 if @i2_options.first[:sleep] then
                     sleep @i2_options.first[:sleep] * i
                 end
-                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server} ; exit"
             else
                 
                 @term.sessions[@session_index + i].write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
