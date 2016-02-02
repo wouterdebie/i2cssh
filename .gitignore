@@ -46,3 +46,8 @@ pkg
 
 # For rubinius:
 #*.rbc
+
+# IDE metadata
+**/.settings/
+**/.idea/
+**/*.iml

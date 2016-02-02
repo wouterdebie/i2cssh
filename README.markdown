@@ -184,11 +184,6 @@ will result in
 
     ssh -p 2222 -L 8080:localhost:8080
 
-## Known issues
-
-- i2cssh uses rb-appscript and that only seems to work on ruby 1.8.7 and breaks on 1.9.x
-- appscript is no longer supported (http://appscript.sourceforge.net/status.html). This means that i2cssh might have to move to something else in the future. I haven't really looked at anything, but let me know if you find a good alternative!
-
 ## TODO
 
 - Functional parity with csshX (as far as possible)
