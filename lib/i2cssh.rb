@@ -1,4 +1,4 @@
-require 'appscript'
+require 'rb-scpt'
 class I2Cssh
     def initialize servers, ssh_options, i2_options, ssh_environment
         @ssh_prefix         = "ssh " + ssh_options.join(' ')

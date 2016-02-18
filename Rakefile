@@ -22,7 +22,7 @@ Jeweler::Tasks.new do |gem|
   gem.email = "wouter@evenflow.se"
   gem.authors = ["Wouter de Bie"]
   # dependencies defined in Gemfile
-  gem.add_dependency 'rb-appscript', "~> 0.6.1"
+  gem.add_dependency 'rb-scpt', "~> 1.0.1"
 end
 Jeweler::RubygemsDotOrgTasks.new
 
