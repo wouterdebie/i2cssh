@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'optparse'
-require 'i2cssh'
+require_relative '../lib/i2cssh'
 require 'yaml'
 
 @config_file = File.expand_path "~/.i2csshrc"
