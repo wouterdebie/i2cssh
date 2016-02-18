@@ -4,8 +4,12 @@ i2cssh is a csshX (http://code.google.com/p/csshx/) like tool for connecting ove
 a master window for input, i2cssh uses iterm2 split panes and "Send input to all sessions" (cmd-shift-i) to send commands
 to all sessions.
 
-## Installing 
+## Installing
 
+When using iTerm2 < 2.9, install i2cssh version 1.16.0:
+    $ gem install i2cssh -v 1.16.0
+
+Otherwise, just run:
     $ gem install i2cssh
 
 ## Usage
@@ -79,7 +83,7 @@ Optional parameters can be used globally or per cluster and include:
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
         - LC_BAR: bar
-    
+
     iterm2: true                # Use iTerm2.app instead of iTerm.app (only available globally)
 
 Note: rows and columns can't be used together.
@@ -142,7 +146,7 @@ Will read nodes from a file. These will be added to any hosts specified on the c
 
 ### -c, --clusters clus1,clus2
 
-Connect to one or more clusters that are specified in the config 
+Connect to one or more clusters that are specified in the config
 
 ### -r, --rank
 
@@ -154,12 +158,12 @@ Connect to the machines a, b and c
 
 ### -t, --tab-split
 
-Split servers/clusters into tabs, grouping arguments. 
+Split servers/clusters into tabs, grouping arguments.
 Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, all the arguments are in one tab.
 
 ### -T, --tab-split-nogroup
 
-Split servers/clusters into tabs, *not* grouping arguments. 
+Split servers/clusters into tabs, *not* grouping arguments.
 Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, each argument is in its own tab.
 
 ### -s, --sleep SLEEP
@@ -172,7 +176,7 @@ Set extra ssh parameters in the form -Xk=v. For example:
 
     i2cssh -Xi=myidentity.pem
 
-will result in 
+will result in
 
     ssh -i myidentity.pem
 
@@ -191,9 +195,9 @@ will result in
 
 ## Contributing to i2cssh
 
-I know that i2cssh doesn't have all the functionality of csshX, but either let me know what you really need or 
+I know that i2cssh doesn't have all the functionality of csshX, but either let me know what you really need or
 fork, hack and create a pull request.
- 
+
  * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
  * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
  * Fork the project
@@ -206,4 +210,3 @@ fork, hack and create a pull request.
 
 Copyright (c) 2011-2012 Wouter de Bie. See LICENSE.txt for
 further details.
-
