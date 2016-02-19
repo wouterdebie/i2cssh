@@ -7,9 +7,11 @@ to all sessions.
 ## Installing
 
 When using iTerm2 < 2.9, install i2cssh version 1.16.0:
+
     $ gem install i2cssh -v 1.16.0
 
 Otherwise, just run:
+
     $ gem install i2cssh
 
 ## Usage
