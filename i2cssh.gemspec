@@ -15,14 +15,14 @@ Gem::Specification.new do |s|
   s.executables = ["i2cssh"]
   s.extra_rdoc_files = [
     "LICENSE.txt",
-    "README.markdown"
+    "README.md"
   ]
   s.files = [
     ".document",
     "Gemfile",
     "Gemfile.lock",
     "LICENSE.txt",
-    "README.markdown",
+    "README.md",
     "Rakefile",
     "VERSION",
     "bin/i2cssh",
