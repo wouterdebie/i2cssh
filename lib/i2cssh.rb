@@ -16,7 +16,7 @@ class I2Cssh
         @shell_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
 
         @profile = i2_options.first[:profile] || "Default"
-        @shell = ENV["SHELL"] || "/usr/bin/env bash"
+        @shell = "/usr/bin/env bash"
 
         @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l")
         @window = @iterm.current_window
