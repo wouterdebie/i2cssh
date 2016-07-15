@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "i2cssh"
-  s.version = "2.1.0"
+  s.version = "2.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Wouter de Bie"]
-  s.date = "2016-07-14"
+  s.date = "2016-07-15"
   s.description = "csshX like cluster ssh using iTerm2 panes"
   s.email = "wouter@evenflow.se"
   s.executables = ["i2cssh"]
