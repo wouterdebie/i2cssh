@@ -16,9 +16,9 @@ class I2Cssh
         @shell_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
 
         @profile = i2_options.first[:profile] || "Default"
-        @shell = ENV["SHELL"] || "/usr/bin/env bash"
+        @shell = "/usr/bin/env bash"
 
-        @iterm.create_window_with_profile(@profile, :command => "/usr/bin/env bash -l")
+        @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l")
         @window = @iterm.current_window
 
         while !@servers.empty? do
@@ -122,7 +122,7 @@ class I2Cssh
         1.upto(@rows*@columns) do |i|
             tab = @window.current_tab
             session = tab.sessions[i]
-            session.write :text => "/usr/bin/env bash -l"
+            session.write :text => "#{@shell} -l"
 
             # Without the tab flag, combine all servers and clusters into one window
             if !@servers.empty? && (i - old_size) > @servers.first.size && !@i2_options.first[:tabs]
