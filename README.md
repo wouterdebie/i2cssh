@@ -17,7 +17,7 @@ Otherwise, just run:
 ## Usage
     Usage: i2cssh [options] [(username@host [username@host] | username@cluster)]
     -c, --clusters clus1,clus2       Comma-separated list of clusters specified in ~/.i2csshrc
-    -m, --machines a,b,c             Comma-separated list of hosts
+    -m, --machines a,b,c             Comma-separated list of hosts(can include ranges)
     -f, --file FILE                  Cluster file (one hostname per line)
     -t, --tab-split                  Split servers/clusters into tabs (group arguments)
     -T, --tab-split-nogroup          Split servers/clusters into tabs (don't group arguments)
@@ -156,7 +156,10 @@ Send a LC_RANK environment variable different for each host (from 0 to n)
 
 ### -m, --machines a,b,c
 
-Connect to the machines a, b and c
+Connect to the machines a, b and c. To use a range of values, see Ruby Ranges and surround them with square brackets. Examples of this can be:
+* Ruby Range: server[1..3] == server1,server2,server3
+* Comma List: server[a,b,c] == servera, serverb, serverc
+* Both: server[a..c][1..2] == servera1 servera2 serverb1 serverb2 serverc1 serverc2
 
 ### -t, --tab-split
 

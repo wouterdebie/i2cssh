@@ -94,8 +94,37 @@ optparse = OptionParser.new do |opts|
         get_hosts(c)
     end
 
+    opts.accept('Machine') do |machines|
+        # Split, but ignore "," characters within square brackets
+        new_machines = []
 
-    opts.on '-m', '--machines a,b,c', Array,
+        ignore_comma = false
+        current_machine = ""
+        machines.each_char do |c|
+            case c
+            when '['
+                ignore_comma = true
+                current_machine << c
+            when ']'
+                ignore_comma = false
+                current_machine << c
+            when ','
+                if ignore_comma
+                    current_machine << c
+                else
+                    new_machines << current_machine
+                    current_machine = ""
+                end
+            else
+                current_machine << c
+            end
+        end
+
+        new_machines << current_machine
+    end
+
+
+    opts.on '-m', '--machines a,b,c', 'Machine',
         'Comma-separated list of hosts' do |h|
 
         # Add to servers array and get a clone of default options

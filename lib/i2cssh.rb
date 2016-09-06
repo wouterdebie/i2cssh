@@ -1,10 +1,12 @@
 require 'rb-scpt'
+require_relative 'expand_servers'
+
 class I2Cssh
     def initialize servers, ssh_options, i2_options, ssh_environment
         @ssh_prefix         = "ssh " + ssh_options.join(' ')
         @ssh_options        = ssh_options
         @i2_options         = i2_options.clone
-        @servers            = servers
+        @servers            = ExpandServers.expand_servers servers
         @ssh_environment    = ssh_environment
 
         raise Exception.new 'No servers given' if servers.empty?

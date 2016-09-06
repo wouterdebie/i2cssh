@@ -10,5 +10,7 @@ group :development do
   gem "jeweler", "~> 2.0.0"
   gem "shoulda"
   gem "builder"
+  gem "rb-scpt"
+  gem "pry"
 end
 
