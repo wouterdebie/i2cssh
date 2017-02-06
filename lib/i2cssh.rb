@@ -154,7 +154,7 @@ class I2Cssh
                     sleep @i2_options.first[:sleep] * i
                 end
 
-                session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
+                session.write :text => "unset HISTFILE && echo -e \"\\033]1;#{server}\\007\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
 
                 session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
