@@ -21,6 +21,7 @@ Otherwise, just run:
     -f, --file FILE                  Cluster file (one hostname per line)
     -t, --tab-split                  Split servers/clusters into tabs (group arguments)
     -T, --tab-split-nogroup          Split servers/clusters into tabs (don't group arguments)
+    -W, --same-window                Use existing window for spawning new tabs
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
     -e, --environment KEY=VAL        Send environment vars (comma-separated list, need to start with LC_)
@@ -167,6 +168,10 @@ Tabs are created as follows: hosts after a -m option are put in one tab, each cl
 
 Split servers/clusters into tabs, *not* grouping arguments.
 Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, each argument is in its own tab.
+
+### -W, --same-window
+
+Do not create new Window, but spawn new cluster tabs in current (last used) iterm Window
 
 ### -s, --sleep SLEEP
 

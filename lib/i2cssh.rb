@@ -18,8 +18,9 @@ class I2Cssh
         @profile = i2_options.first[:profile] || "Default"
         @shell = "/usr/bin/env bash"
 
-        @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l")
+        @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l") if !i2_options.first[:same_win]
         @window = @iterm.current_window
+        @window.create_tab_with_default_profile(:command => "#{@shell} -l") if i2_options.first[:same_win]
 
         while !@servers.empty? do
             compute_geometry
@@ -32,11 +33,11 @@ class I2Cssh
 
             if !@servers.empty?  && i2_options.first[:tabs] then
                 # @iterm.create_tab(@profile)
-                @window.create_tab_with_default_profile()
+                @window.create_tab_with_default_profile(:command => "#{@shell} -l")
                 @session_index = 0
             end
         end
-        @window.select(@window.tabs[1])
+        @window.select(@window.tabs[1]) if !i2_options.first[:same_win]
     end
 
     private
