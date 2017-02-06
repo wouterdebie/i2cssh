@@ -156,11 +156,7 @@ class I2Cssh
 
                 session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\" && #{@ssh_prefix} #{send_env} #{server}"
             else
-
-                session.write :text => "unset HISTFILE && echo -e \"\\033]50;SetProfile=#{@profile}\\a\""
-                sleep 0.3
-                session.foreground_color.set ([65535,0,0])
-                session.write :text => "stty -isig -icanon -echo && echo -e '#{"\n"*100}UNUSED' && cat > /dev/null"
+                session.close
             end
         end
     end
