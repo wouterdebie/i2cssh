@@ -18,7 +18,7 @@ class I2Cssh
         @profile = i2_options.first[:profile] || "Default"
         @shell = "/usr/bin/env #{@i2_options.first[:shell] || 'bash'}"
 
-        @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l")
+        @iterm.activate()
         @window = @iterm.current_window
 
         while !@servers.empty? do
