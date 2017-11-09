@@ -15,7 +15,7 @@ class I2Cssh
         @pane_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Window"].menus["Window"].menu_items["Select Split Pane"].menus["Select Split Pane"]
         @shell_menu = @sys_events.processes["iTerm2"].menu_bars[1].menu_bar_items["Shell"].menus["Shell"]
 
-        @profile = i2_options.first[:profile] || "Default"
+        @profile = @i2_options.first[:profile] || "Default"
         @shell = "/usr/bin/env #{@i2_options.first[:shell] || 'bash'}"
 
         @iterm.create_window_with_profile(@profile, :command => "#{@shell} -l")
@@ -25,12 +25,12 @@ class I2Cssh
             compute_geometry
             split_session
             start_ssh
-            enable_broadcast if i2_options.first[:broadcast]
+            enable_broadcast if @i2_options.first[:broadcast]
             @servers.shift
             @i2_options.shift
             @ssh_environment.shift
 
-            if !@servers.empty?  && i2_options.first[:tabs] then
+            if !@servers.empty?  && @i2_options.first[:tabs] then
                 # @iterm.create_tab(@profile)
                 @window.create_tab_with_default_profile()
                 @session_index = 0
