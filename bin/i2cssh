@@ -94,13 +94,11 @@ optparse = OptionParser.new do |opts|
         get_hosts(c)
     end
 
-
     opts.on '-m', '--machines a,b,c', Array,
-        'Comma-separated list of hosts' do |h|
+        'Comma-separated list of hosts' do |servers|
 
-        # Add to servers array and get a clone of default options
-        @servers << h
-        @i2_options << @i2_options.first.clone
+        @servers = [servers]
+        @i2_options << set_options({ 'hosts' => @servers.first })
         if @ssh_environment.empty?
             @ssh_environment << {}
         else
@@ -269,7 +267,7 @@ end
 
 # Drop default options
 if @i2_options.size > @servers.size
-    @i2_options.shift
+    @i2_options.pop
 end
 
 if @ssh_environment.size > @servers.size
