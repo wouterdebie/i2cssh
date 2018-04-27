@@ -46,7 +46,7 @@ def set_options(config_hash, login_override=nil)
         @i2_options << @i2_options.first.clone
     end
 
-    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :shell, :direction, :itermname].each do |p|
+    [:broadcast, :profile, :rank, :iterm2, :login, :columns, :rows, :sleep, :ssh, :shell, :direction, :itermname].each do |p|
         @i2_options.last[p] = config_hash[p.to_s].nil? ? @i2_options.last[p] : config_hash[p.to_s]
     end
 
@@ -209,6 +209,10 @@ optparse = OptionParser.new do |opts|
     opts.on '-S', '--shell SHELL', String,
         'Shell to use when spawning the SSH sessions' do |s|
         opts_from_cmdline[:shell] = s
+    end
+    opts.on '-h', '--ssh SSH', String,
+        'ssh to use when spawning the SSH sessions' do |h|
+        opts_from_cmdline[:ssh] = h
     end
     opts.on "-d", '--direction DIRECTION', String,
         'Direction that new sessions are created (default: column)' do |d|
