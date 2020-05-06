@@ -222,7 +222,7 @@ optparse = OptionParser.new do |opts|
     opts.on '-X', '--extra EXTRA_PARAM', String,
         'Additional ssh parameters (e.g. -Xi=myidentity.pem)' do |x|
 
-         ssh_options << "-" + x.split("=").join(" ")
+         ssh_options << "-" + x.split("=", 2).join(" ")
     end
     opts.on '-g', '--gateway HOST', String,
         'Multihop SSH connection gateway string (e.g. username@gateway) - usually used with -A' do |g|
