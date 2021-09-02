@@ -26,7 +26,6 @@ GEM
       nokogiri (>= 1.5.10)
       rake
       rdoc
-    json (1.8.1)
     jwt (0.1.11)
       multi_json (>= 1.5)
     mini_portile (0.5.2)
@@ -43,8 +42,7 @@ GEM
       rack (~> 1.2)
     rack (1.5.2)
     rake (10.1.1)
-    rdoc (4.1.1)
-      json (~> 1.4)
+    rdoc (6.3.2)
     shoulda (2.11.3)
 
 PLATFORMS
