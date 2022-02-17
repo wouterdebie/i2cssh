@@ -68,7 +68,7 @@ def set_options(config_hash, login_override=nil)
 
 end
 
-if File.exists?(@config_file)
+if File.exist?(@config_file)
     config_hash = YAML.load File.read @config_file
 
     # Read config and set defaults from config
