@@ -1,5 +1,8 @@
-# i2cssh
+## NOTE: This project is unmaintained.
 
+Unfortunately I don't have enough time to maintain this tool for now, so you should consider it unmaintained. If someone feels a calling to maintain i2cssh, please let me known and I'll transfer ownership.
+
+# i2cssh
 i2cssh is a csshX (http://code.google.com/p/csshx/) like tool for connecting over ssh to multiple machines. But instead of creating separate windows and having
 a master window for input, i2cssh uses iterm2 split panes and "Send input to all sessions" (cmd-shift-i) to send commands
 to all sessions.
