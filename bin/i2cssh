@@ -131,6 +131,11 @@ optparse = OptionParser.new do |opts|
         opts_from_cmdline[:tabs_nogroup] = true
     end
 
+    opts.on '-W', '--same-window',
+            'Use existing window for spawning new tabs' do
+        opts_from_cmdline[:same_win] = true
+    end
+
     # Command line options override config file
 
     # SSH options
