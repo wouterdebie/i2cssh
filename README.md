@@ -1,23 +1,22 @@
-## NOTE: This project is unmaintained.
+## NOTE: PYTHON rewrite!
 
-Unfortunately I don't have enough time to maintain this tool for now, so you should consider it unmaintained. If someone feels a calling to maintain i2cssh, please let me known and I'll transfer ownership.
+I finally took some time to rewrite i2cssh in python. For a while iterm2 has had a python API that allows you to automate a bunch
+of stuff. This python implementation uses that API to do the same thing as the original ruby script. This should make this
+app more maintainable, since it doesn't rely on any weird AppleScript bindings and emitting key codes. Secondly, it should be
+quite a bit faster in generating the ssh windoes.
 
 # i2cssh
+
 i2cssh is a csshX (http://code.google.com/p/csshx/) like tool for connecting over ssh to multiple machines. But instead of creating separate windows and having
 a master window for input, i2cssh uses iterm2 split panes and "Send input to all sessions" (cmd-shift-i) to send commands
 to all sessions.
 
 ## Installing
 
-When using iTerm2 < 2.9, install i2cssh version 1.16.0:
-
-    $ gem install i2cssh -v 1.16.0
-
-Otherwise, just run:
-
-    $ gem install i2cssh
+    $ pip install i2cssh
 
 ## Usage
+
     Usage: i2cssh [options] [(username@host [username@host] | username@cluster)]
     -c, --clusters clus1,clus2       Comma-separated list of clusters specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
@@ -35,11 +34,9 @@ Otherwise, just run:
     -b, --broadcast                  Start with broadcast input (DANGEROUS!)
     -nb, --nobroadcast               Disable broadcast
     -p, --profile PROFILE            Name of the iTerm2 profile (default: Default)
-    -2, --iterm2                     Use iTerm2 instead of iTerm
-    -i, --itermname NAME             Name of the application to use (default: iTerm)
     -s, --sleep SLEEP                Number of seconds to sleep between creating SSH sessions
     -d, --direction DIRECTION        Direction that new sessions are created (default: column)
-    -X, --extra EXTRA_PARAM          Additional ssh parameters (e.g. -Xi=myidentity.pem)
+    -X, --extra EXTRA_PARAM          Additional ssh parameters (e.g. -Xi=myidentity.pem or -X6)
 
 i2cssh will assume you want to connect to a cluster when only one host is given.
 
@@ -52,7 +49,7 @@ The following commands are exactly the same, however, they might serve different
 
 You can combine these options and use them multiple times:
 
-    $ i2cssh -m user1@host1,user2@host2 -m user3@host3 user4@host4 user5@host5
+    $ i2cssh -m user1@host1,user2@host2 user4@host3 user5@host4
 
 Using the `-l` option will override all usernames:
 
@@ -84,15 +81,13 @@ Optional parameters can be used globally or per cluster and include:
     rows: <rows>                # Amount of rows
     sleep: <secs>               # Seconds to sleep between creating SSH sessions
     direction: (column/row)     # Direction that new sessions are created (default: column)
-    itermname:                  # iTerm app name (default: iTerm)
+    shell: <shell>              # Shell to use (default: /bin/bash)
 
     environment:                # Send the following enviroment variables
         - LC_FOO: foo
         - LC_BAR: bar
 
-    iterm2: true                # Use iTerm2.app instead of iTerm.app (only available globally)
-
-Note: rows and columns can't be used together.
+Note: rows and columns can't be used at the same time.
 
 The following precedence is used:
 
@@ -138,14 +133,6 @@ Disable broadcast. This setting can be used to disable any broadcast that was se
 
 Use a specific iTerm profile
 
-### -2, --iterm2
-
-Use iTerm2.app instead of iTerm.app
-
-### -i, --itermname NAME
-
-Name of the application to use (default: iTerm). It happens sometimes iTerm isn't called iTerm. Use this parameter to override what app i2cssh interacts with.
-
 ### -f, --file
 
 Will read nodes from a file. These will be added to any hosts specified on the command line or in the config
@@ -169,7 +156,7 @@ Tabs are created as follows: hosts after a -m option are put in one tab, each cl
 
 ### -T, --tab-split-nogroup
 
-Split servers/clusters into tabs, *not* grouping arguments.
+Split servers/clusters into tabs, _not_ grouping arguments.
 Tabs are created as follows: hosts after a -m option are put in one tab, each cluster is always in its own tab, each argument is in its own tab.
 
 ### -W, --same-window
@@ -201,22 +188,19 @@ will result in
 ## TODO
 
 - Functional parity with csshX (as far as possible)
-- -X support in config file
 
 ## Contributing to i2cssh
 
 I know that i2cssh doesn't have all the functionality of csshX, but either let me know what you really need or
 fork, hack and create a pull request.
 
- * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
- * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
- * Fork the project
- * Start a feature/bugfix branch
- * Commit and push until you are happy with your contribution
- * Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
- * Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+- Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
+- Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
+- Fork the project
+- Start a feature/bugfix branch
+- Commit and push until you are happy with your contribution
 
 ## Copyright
 
-Copyright (c) 2011-2012 Wouter de Bie. See LICENSE.txt for
+Copyright (c) 2011-2022 Wouter de Bie. See LICENSE.txt for
 further details.

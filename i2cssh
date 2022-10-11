@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
+import asyncio
+import math
 import os
 import pprint
-import math
+import sys
+
 import click
 import iterm2
 import yaml
-import asyncio
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 from iterm2 import Session
 from iterm2.color import Color
@@ -29,12 +31,12 @@ from iterm2.profile import LocalWriteOnlyProfile
 @optgroup.option('--gateway', '-g', multiple=False, help='Multihop SSH connection gateway string (e.g. username@gateway) - usually used with -A')
 @optgroup.group('iTerm2 options')
 @optgroup.option('--fullscreen', '-F', is_flag=True, help='Make the window fullscreen')
-@optgroup.option('--broadcast/--nobroadcast', '-b/-nb', is_flag=True, default=False, help='Start with broadcast input (DANGEROUS!)')
-@optgroup.option('--profile', '-p', multiple=False, default="Default", help='iTerm2 profile name (default: Default)')
+@optgroup.option('--broadcast', '-b', is_flag=True, default=False, help='Start with broadcast input (DANGEROUS!)')
+@optgroup.option('--nobroadcast', '-nb', is_flag=True, default=False, help='Disable broadcast input')
+@optgroup.option('--profile', '-p', multiple=False, help='iTerm2 profile name (default: Default)')
 @optgroup.option('--sleep', '-s', multiple=False, type=int, help='Number of seconds to sleep between creating SSH sessions')
-@optgroup.option('--shell', '-S', multiple=False, default='bash', help='Shell to use when spawning the SSH sessions')
+@optgroup.option('--shell', '-S', multiple=False, help='Shell to use when spawning the SSH sessions (default: bash)')
 @optgroup.option('--direction', '-d', multiple=False, default="column", type=click.Choice(['column', 'row'], case_sensitive=False), help='Direction that new sessions are created (default: column)')
-@optgroup.option('--profile', '-p', multiple=False, default="Default", help='iTerm2 profile name (default: Default)')
 @optgroup.group("Layout", cls=MutuallyExclusiveOptionGroup)
 @optgroup.option('--columns', '-C', multiple=False, type=int, help='Number of columns (rows will be calculated)')
 @optgroup.option('--rows', '-R', multiple=False, type=int, help='Number of rows (columns will be calculated)')
@@ -68,7 +70,7 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # configuration. Otherwise we construct a list of hosts from the arguments.
     if len(hosts_or_cluster) == 1:
         # Single cluster, so we know there's only one list returned
-        groups.append(get_hosts_from_cluster_names(
+        groups.append(get_clusters_from_cluster_names(
             [hosts_or_cluster[0]], config, valid_options))
     elif len(hosts_or_cluster) > 1:
         argument_hosts = get_hosts(hosts_or_cluster)
@@ -84,7 +86,7 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # The command line option '-c' can also provide clusters, so we need to get the hosts
     # from those clusters as well.
     if opts.get("cli_clusters"):
-        clusters = get_hosts_from_cluster_names(
+        clusters = get_clusters_from_cluster_names(
             opts.get("cli_clusters").split(","), config, valid_options)
         for cluster in clusters:
             groups.append(cluster)
@@ -93,6 +95,9 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # from those host strings as well
     if opts.get("machines"):
         groups.append(get_hosts(opts.get("machines").split(",")))
+
+    if filename := opts.get("file"):
+        groups.append(get_hosts(get_host_strs_from_file(filename)))
 
     # Each host will might have additional options based on cluster config
     # or username@host syntax. We need to merge those options with the
@@ -115,11 +120,26 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     if not (opts.get("tab_split") or opts.get("tab_split_nogroup")):
         groups = [[item for sublist in groups for item in sublist]]
 
-    # Attach a geometry to each group
-    groups = [{"hosts": hosts, "geometry": compute_geometry(
-        len(hosts), opts)} for hosts in groups]
+    if len(flatten(groups)) == 0:
+        click.echo("No hosts found")
+        sys.exit(1)
 
-    iterm2.run_until_complete(do_stuff(groups, opts))
+    # Attach a geometry to each group. Here we take the first host in the group
+    # since it will have all the options (including geometry) from the config
+    groups = [{
+        "hosts": hosts,
+        "geometry": compute_geometry(len(hosts), hosts[0])
+    } for hosts in groups]
+
+    iterm2.run_until_complete(exec_in_iterm(groups, opts))
+
+
+def get_host_strs_from_file(filename):
+    hosts = []
+    with open(filename) as f:
+        for line in f:
+            hosts.append(line.strip())
+    return hosts
 
 
 def sanitize_options(opts):
@@ -131,34 +151,40 @@ def sanitize_options(opts):
         if opts[opt] is False:
             opts[opt] = None
 
-    if opts.get("shell") != "bash":
-        opts["shell"] = "/usr/bin/env " + opts["shell"]
 
-
-def do_stuff(groups, opts):
+def exec_in_iterm(groups, opts):
     async def inner(connection):
-
-        profile_name = opts["profile"]
-
+        # Setup iterm API connection
         app = await iterm2.async_get_app(connection)
         window = app.current_window
 
+        # Bail if we're not inside iterm
         if window is None:
             print("No current window")
             return
 
-        shell = f"{opts['shell']} -l "
-        lwop = LocalWriteOnlyProfile()
-        lwop.set_use_custom_command("Yes")
-        lwop.set_command(f'{shell}\n')
-
         broadcast_domains = []
-
         for i, group in enumerate(groups):
+
+            # Hosts in the group use the same profile, since we can't specify a profile per host
+            # in the config file. Because of this, we take the profile for the first host in the
+            # group and use that for all hosts in that group.
+            profile_name = group["hosts"][0].get("profile", "Default")
+
+            # Same thing for the shell
+            shell = f"/usr/bin/env {group['hosts'][0].get('shell', 'bash')} -l "
+            lwop = LocalWriteOnlyProfile()
+            lwop.set_use_custom_command("Yes")
+            lwop.set_command(f'{shell}\n')
+
             if i == 0 and not opts.get("same_window"):
                 window = await window.async_create(connection, profile_name, profile_customizations=lwop)
             else:
                 await window.async_create_tab(profile_name, profile_customizations=lwop)
+
+            # Set window to fullscreen if necessary
+            if i == 0 and opts.get("fullscreen"):
+                await window.async_set_fullscreen(True)
 
             cols = group["geometry"]["cols"]
             rows = group["geometry"]["rows"]
@@ -179,7 +205,7 @@ def do_stuff(groups, opts):
             # Split vertically cols-1 times from the last pane
             # This takes care of the first row
             for col in range(1, cols):
-                pane = await pane.async_split_pane(vertical, profile_customizations=lwop)
+                pane = await pane.async_split_pane(vertical, profile_customizations=lwop, profile=profile_name)
                 panes.append(pane)
 
             # For subsequent rows, we first go back to the first
@@ -191,13 +217,15 @@ def do_stuff(groups, opts):
                 # Then for each column we split horizontally and jump
                 # to the pane in the next column on the previous row
                 for col in range(cols):
-                    panes.append(await pane.async_split_pane(horizontal, profile_customizations=lwop))
+                    new_pane = await pane.async_split_pane(horizontal, profile_customizations=lwop, profile=profile_name)
+                    panes.append(new_pane)
                     next_pane = col_row_to_index(col+1, row-1, cols)
                     pane = panes[next_pane]
 
-            # Add panes for this group to a broadcast domain, just in case
-            # we need to broadcast to all panes in this group
-            broadcast_domains.append(panes)
+            # Add panes for this group to a broadcast domain, if the first host sepcifies
+            # broadcast as an option, UNLESS nobroadcast is set as well.
+            if not group["hosts"][0].get("nobroadcast") and group["hosts"][0].get("broadcast"):
+                broadcast_domains.append(panes)
 
             for p, pane in enumerate(panes):
                 # There might be more panes than hosts
@@ -226,20 +254,22 @@ def do_stuff(groups, opts):
                     if s := opts.get("sleep"):
                         await asyncio.sleep(s)
 
-                    await pane.async_send_text(f"unset HISTFILE && echo -e \"\\033]50;SetProfile=#{profile_name}\\a\" && {ssh_prefix} {send_env} {host}\n")
+                    await pane.async_send_text(f"unset HISTFILE && {ssh_prefix} {send_env} {host}\n")
 
                 # If we run out of hosts, display an "Unused" pane
                 else:
                     profile = await pane.async_get_profile()
-                    await pane.async_send_text(f"unset HISTFILE && echo -e \"\\033]50;SetProfile={profile_name}\\a\"\n")
+                    await pane.async_send_text(f"unset HISTFILE\n")
                     await asyncio.sleep(0.3)
                     await profile.async_set_foreground_color(Color.from_hex("#ff0000"))
                     crs = "\n" * 100
                     await pane.async_send_text(f"stty -isig -icanon -echo && echo -e '{crs}UNUSED' && cat > /dev/null\n")
 
-        if opts["broadcast"]:
-            print("Enable broadcast input")
-            await enable_broadcast(connection, broadcast_domains)
+            # Activate first pane
+            await panes[0].async_activate()
+
+        # Enable broadcast input for all groups that require it
+        await enable_broadcast(connection, broadcast_domains)
 
     return inner
 
@@ -275,8 +305,15 @@ def create_ssh_prefix(opts):
     ssh_options = []
     if opts.get("forward_agent"):
         ssh_options.append("-A")
+
     if e := opts.get("extra"):
-        ssh_options.append(" ".join([f"-Xi={x}" for x in e]))
+        for extra in e:
+            if "=" in extra:
+                k, v = extra.split("=")
+                ssh_options.append(f"-{k} {v}")
+            else:
+                ssh_options.append(f"-{extra}")
+
     if g := opts.get("gateway"):
         ssh_options.append(f"-o ProxyCommand=\"ssh -W %h:%p {g}\"")
 
@@ -313,7 +350,7 @@ def get_hosts(host_strings):
     return hosts
 
 
-def get_hosts_from_cluster_names(cluster_names, config, valid_options):
+def get_clusters_from_cluster_names(cluster_names, config, valid_options):
     """
     Get hosts from a list of cluster names. Note that this returns
     a list of hosts grouped by cluster.
@@ -377,6 +414,11 @@ def read_config():
                 return yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+
+
+def flatten(l):
+    """Flatten a list of lists"""
+    return [item for sublist in l for item in sublist]
 
 
 def main():
