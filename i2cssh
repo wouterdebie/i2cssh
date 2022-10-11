@@ -11,6 +11,7 @@ from iterm2 import Session
 from iterm2.color import Color
 from iterm2.profile import LocalWriteOnlyProfile
 
+
 @click.command()
 @optgroup.group('General options')
 @optgroup.option('--clusters', '-c', 'cli_clusters', multiple=False, help='Comma-separated list of clusters specified in ~/.i2csshrc')
@@ -21,28 +22,25 @@ from iterm2.profile import LocalWriteOnlyProfile
 @optgroup.option('--same-window', '-W', is_flag=True, default=False, help="Use existing window for spawning new tabs")
 @optgroup.group('SSH options')
 @optgroup.option('--forward-agent', '-A', multiple=False, is_flag=True, help='Enable SSH agent forwarding')
-@optgroup.option('--login', '-l', multiple=False, help='SSH user name')
+@optgroup.option('--login', '-l', 'username', multiple=False, help='SSH user name')
 @optgroup.option('--environment', '-e', multiple=False, help='Send environment vars (comma-separated list, need to start with LC_)')
 @optgroup.option('--rank', '-r', is_flag=True, help='Send LC_RANK with the host number as environment variable')
-@optgroup.option('--extra', '-X', multiple=False, help='Additional ssh parameters (e.g. -Xi=myidentity.pem)')
+@optgroup.option('--extra', '-X', multiple=True, help='Additional ssh parameters (e.g. -Xi=myidentity.pem)')
 @optgroup.option('--gateway', '-g', multiple=False, help='Multihop SSH connection gateway string (e.g. username@gateway) - usually used with -A')
 @optgroup.group('iTerm2 options')
 @optgroup.option('--fullscreen', '-F', is_flag=True, help='Make the window fullscreen')
 @optgroup.option('--broadcast/--nobroadcast', '-b/-nb', is_flag=True, default=False, help='Start with broadcast input (DANGEROUS!)')
 @optgroup.option('--profile', '-p', multiple=False, default="Default", help='iTerm2 profile name (default: Default)')
-@optgroup.option('--iterm2', '-2', is_flag=True, help='Use iTerm2 instead of iTerm')
-@optgroup.option('--itermname', '-i', multiple=False, default='iTerm', help='Name of the application to use (default: iTerm)')
-@optgroup.option('--sleep', '-s', multiple=False, help='Number of seconds to sleep between creating SSH sessions')
+@optgroup.option('--sleep', '-s', multiple=False, type=int, help='Number of seconds to sleep between creating SSH sessions')
 @optgroup.option('--shell', '-S', multiple=False, default='bash', help='Shell to use when spawning the SSH sessions')
 @optgroup.option('--direction', '-d', multiple=False, default="column", type=click.Choice(['column', 'row'], case_sensitive=False), help='Direction that new sessions are created (default: column)')
 @optgroup.option('--profile', '-p', multiple=False, default="Default", help='iTerm2 profile name (default: Default)')
 @optgroup.group("Layout", cls=MutuallyExclusiveOptionGroup)
-@optgroup.option('--columns', '-C', multiple=False, help='Number of columns (rows will be calculated)')
-@optgroup.option('--rows', '-R', multiple=False, help='Number of rows (columns will be calculated)')
+@optgroup.option('--columns', '-C', multiple=False, type=int, help='Number of columns (rows will be calculated)')
+@optgroup.option('--rows', '-R', multiple=False, type=int, help='Number of rows (columns will be calculated)')
 @click.argument('hosts_or_cluster', nargs=-1, )
 def i2cssh(hosts_or_cluster, *_args, **opts):
     """HOSTS: [(username@host [username@host] | username@cluster)]"""
-
 
     sanitize_options(opts)
 
@@ -53,7 +51,8 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # Load config file and get valid options
     config = read_config()
     if config:
-        global_options_from_config = get_global_options_from_config(config, valid_options)
+        global_options_from_config = get_global_options_from_config(
+            config, valid_options)
 
     # Because we can split tabs based on cluster/hosts/arguments we first
     # create different groups inside the hosts list. If it turns out we
@@ -69,7 +68,8 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # configuration. Otherwise we construct a list of hosts from the arguments.
     if len(hosts_or_cluster) == 1:
         # Single cluster, so we know there's only one list returned
-        groups.append(get_hosts_from_cluster_names([hosts_or_cluster[0]], config, valid_options))
+        groups.append(get_hosts_from_cluster_names(
+            [hosts_or_cluster[0]], config, valid_options))
     elif len(hosts_or_cluster) > 1:
         argument_hosts = get_hosts(hosts_or_cluster)
 
@@ -84,7 +84,8 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # The command line option '-c' can also provide clusters, so we need to get the hosts
     # from those clusters as well.
     if opts.get("cli_clusters"):
-        clusters = get_hosts_from_cluster_names(opts.get("cli_clusters").split(","), config, valid_options)
+        clusters = get_hosts_from_cluster_names(
+            opts.get("cli_clusters").split(","), config, valid_options)
         for cluster in clusters:
             groups.append(cluster)
 
@@ -99,8 +100,9 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     #
     # Precedence is: command line > global config > cluster config
     for host in groups:
-        # Apply global options from config file
-        apply_opts(host, global_options_from_config, valid_options)
+        if config:
+            # Apply global options from config file
+            apply_opts(host, global_options_from_config, valid_options)
         # Apply options from command line
         apply_opts(host, opts, valid_options)
 
@@ -111,13 +113,14 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # group though, so we can still use the same code to calculate geometry
     # in both cases
     if not (opts.get("tab_split") or opts.get("tab_split_nogroup")):
-        print("Flattening list")
         groups = [[item for sublist in groups for item in sublist]]
 
     # Attach a geometry to each group
-    groups = [{"hosts": hosts, "geometry": compute_geometry(len(hosts), opts)} for hosts in groups]
+    groups = [{"hosts": hosts, "geometry": compute_geometry(
+        len(hosts), opts)} for hosts in groups]
 
     iterm2.run_until_complete(do_stuff(groups, opts))
+
 
 def sanitize_options(opts):
     # Sanitize options, since we need to be able to distinguish between
@@ -131,6 +134,7 @@ def sanitize_options(opts):
     if opts.get("shell") != "bash":
         opts["shell"] = "/usr/bin/env " + opts["shell"]
 
+
 def do_stuff(groups, opts):
     async def inner(connection):
 
@@ -138,7 +142,6 @@ def do_stuff(groups, opts):
 
         app = await iterm2.async_get_app(connection)
         window = app.current_window
-
 
         if window is None:
             print("No current window")
@@ -148,6 +151,8 @@ def do_stuff(groups, opts):
         lwop = LocalWriteOnlyProfile()
         lwop.set_use_custom_command("Yes")
         lwop.set_command(f'{shell}\n')
+
+        broadcast_domains = []
 
         for i, group in enumerate(groups):
             if i == 0 and not opts.get("same_window"):
@@ -190,31 +195,104 @@ def do_stuff(groups, opts):
                     next_pane = col_row_to_index(col+1, row-1, cols)
                     pane = panes[next_pane]
 
-            for p, pane in enumerate(panes):
+            # Add panes for this group to a broadcast domain, just in case
+            # we need to broadcast to all panes in this group
+            broadcast_domains.append(panes)
 
+            for p, pane in enumerate(panes):
+                # There might be more panes than hosts
                 if p < len(group["hosts"]):
-                    pass
+                    env_vars = {}
+                    send_env = ""
+
+                    # Rank is just an env var, so set it if we have it
+                    if opts.get("rank"):
+                        env_vars["LC_RANK"] = str(p)
+
+                    # Split other env vars by comma and put them in a dict
+                    if from_env := opts.get("environment"):
+                        env_vars.update(dict(s.split("=")
+                                        for s in from_env.split(",")))
+
+                    # If we have env vars, we export them and set them in the
+                    # ssh options
+                    if len(env_vars) > 0:
+                        (env_vars_str, send_env) = get_env_vars_str(env_vars)
+                        await pane.async_send_text(f"{env_vars_str}\n")
+
+                    ssh_prefix = create_ssh_prefix(opts)
+                    host = get_host_str(group["hosts"][p])
+
+                    if s := opts.get("sleep"):
+                        await asyncio.sleep(s)
+
+                    await pane.async_send_text(f"unset HISTFILE && echo -e \"\\033]50;SetProfile=#{profile_name}\\a\" && {ssh_prefix} {send_env} {host}\n")
+
+                # If we run out of hosts, display an "Unused" pane
                 else:
                     profile = await pane.async_get_profile()
                     await pane.async_send_text(f"unset HISTFILE && echo -e \"\\033]50;SetProfile={profile_name}\\a\"\n")
-                    asyncio.sleep(0.3)
+                    await asyncio.sleep(0.3)
                     await profile.async_set_foreground_color(Color.from_hex("#ff0000"))
                     crs = "\n" * 100
                     await pane.async_send_text(f"stty -isig -icanon -echo && echo -e '{crs}UNUSED' && cat > /dev/null\n")
 
+        if opts["broadcast"]:
+            print("Enable broadcast input")
+            await enable_broadcast(connection, broadcast_domains)
 
     return inner
 
+
+async def enable_broadcast(connection, broadcast_domains):
+    domains = []
+    for panes in broadcast_domains:
+        domain = iterm2.broadcast.BroadcastDomain()
+        for session in panes:
+            domain.add_session(session)
+        domains.append(domain)
+
+    await iterm2.async_set_broadcast_domains(connection, domains)
+
+
+def get_host_str(host):
+    """Returns a string username@host if the username is known. Otherwise returns just the hostname"""
+    if username := host.get("username"):
+        return f"{username}@{host['hostname']}"
+    else:
+        return host["hostname"]
+
+
+def get_env_vars_str(env_vars):
+    """Returns a string that exports the env vars and a string that sets them in the ssh options"""
+    env_vars_str = " ".join([f"export {k}={v};" for k, v in env_vars.items()])
+    send_env = "-o SendEnv=" + ",".join([k for k in env_vars.keys()])
+    return (env_vars_str, send_env)
+
+
+def create_ssh_prefix(opts):
+    """Returns a string that contains the ssh prefix, including the ssh options"""
+    ssh_options = []
+    if opts.get("forward_agent"):
+        ssh_options.append("-A")
+    if e := opts.get("extra"):
+        ssh_options.append(" ".join([f"-Xi={x}" for x in e]))
+    if g := opts.get("gateway"):
+        ssh_options.append(f"-o ProxyCommand=\"ssh -W %h:%p {g}\"")
+
+    return "ssh " + " ".join(ssh_options)
+
+
 def col_row_to_index(col, row, cols):
+    """Calcualate the index of a pane based on row and column"""
     return row * cols + col
+
 
 def compute_geometry(hosts, opts):
     """Compute the geometry for the given number of hosts and options"""
-    if opts.get("rows"):
-        rows = int(opts.get("rows"))
+    if rows := opts.get("rows"):
         cols = math.ceil(hosts / rows)
-    elif opts.get("columns"):
-        cols = int(opts.get("columns"))
+    elif cols := opts.get("columns"):
         rows = math.ceil(hosts / cols)
     else:
         rows = math.ceil(math.sqrt(hosts))
@@ -224,6 +302,7 @@ def compute_geometry(hosts, opts):
     # If we surpass either one, we resort to full screen.
     return {"rows": rows, "cols": cols, "requires_fullscreen": rows > 11 or cols > 22}
 
+
 def get_hosts(host_strings):
     """Get hosts from a list of hostname or username@hostname strings"""
     hosts = []
@@ -232,6 +311,7 @@ def get_hosts(host_strings):
         host_opts = {"hostname": hostname, "username": username}
         hosts.append(host_opts)
     return hosts
+
 
 def get_hosts_from_cluster_names(cluster_names, config, valid_options):
     """
@@ -243,7 +323,8 @@ def get_hosts_from_cluster_names(cluster_names, config, valid_options):
         hosts = []
         (username, cluster_name) = parse_hostname(cluster_name)
         host_names = config["clusters"][cluster_name]["hosts"]
-        cluster_options = get_global_options_from_config(config["clusters"][cluster_name], valid_options)
+        cluster_options = get_global_options_from_config(
+            config["clusters"][cluster_name], valid_options)
         for hostname in host_names:
             # Override host options with cluster options
             host_opts = {"hostname": hostname, "username": username}
@@ -251,6 +332,7 @@ def get_hosts_from_cluster_names(cluster_names, config, valid_options):
             hosts.append(host_opts)
         clusters.append(hosts)
     return clusters
+
 
 def apply_opts(opts, overrides, valid_options):
     """
@@ -265,6 +347,7 @@ def apply_opts(opts, overrides, valid_options):
             if key in overrides and overrides[key] is not None:
                 opts[key] = overrides[key]
 
+
 def parse_hostname(hostname):
     """Parse a hostname and return a tuple of (username, host)"""
     username = None
@@ -273,6 +356,7 @@ def parse_hostname(hostname):
         username, host = hostname.split("@")
     return username, host
 
+
 def get_global_options_from_config(config, valid_options):
     """Get global options from the config file"""
     global_options = {}
@@ -280,6 +364,7 @@ def get_global_options_from_config(config, valid_options):
         if key in config:
             global_options[key] = config[key]
     return global_options
+
 
 def read_config():
     """Read the config file"""
@@ -293,8 +378,10 @@ def read_config():
             except yaml.YAMLError as exc:
                 print(exc)
 
+
 def main():
-   i2cssh(prog_name="i2cssh")
+    i2cssh(prog_name="i2cssh")
+
 
 if __name__ == '__main__':
-   main()
+    main()
