@@ -192,6 +192,7 @@ will result in
 ## TODO
 
 - Functional parity with csshX (as far as possible)
+- Better release process (homebrew update after new release)
 
 ## Contributing to i2cssh
 
