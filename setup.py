@@ -1,25 +1,10 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-try:
-    from setuptools import setup
-    from setuptools.command.test import test as TestCommand
-except ImportError:
-    from distutils.core import setup
-    from distutils.cmd import Command as TestCommand
-
-import sys
-
-
-install_requires = [
-    'iterm2==2.6',
-    'click==8.1.3',
-    'PyYAML==6.0',
-    'click-option-group==0.5.3']
+from setuptools import setup
 
 setup(
     name='i2cssh',
-    version='0.0.3',
+    version='0.0.4',
     author=u'Wouter de Bie',
     author_email='wouter@evenflow.nl',
     description='csshX like ssh tool for iTerm2',
@@ -28,10 +13,21 @@ setup(
     license='MIT',
     keywords='ssh i2cssh csshX'.split(),
     classifiers=[
-        'Topic :: Utilities',
+        'Operating System :: MacOS',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python',
-        'Operating System :: MacOS'
+        'Topic :: Terminals :: Terminal Emulators/X Terminals',
+        'Topic :: Utilities',
     ],
-
-    install_requires=install_requires,
+    python_requires='>3.8',
+    install_requires=[
+        'click-option-group==0.5.3'
+        'click==8.1.3',
+        'iterm2==2.6',
+        'PyYAML==6.0',
+    ],
 )

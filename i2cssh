@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import asyncio
 import math
 import os
-import pprint
 import sys
 
 import click
@@ -19,12 +19,12 @@ from iterm2.profile import LocalWriteOnlyProfile
 @optgroup.option('--clusters', '-c', 'cli_clusters', multiple=False, help='Comma-separated list of clusters specified in ~/.i2csshrc')
 @optgroup.option('--machines', '-m', multiple=False, help='Comma-separated list of hosts')
 @optgroup.option('--file', '-f', multiple=False, help='Cluster file (one hostname per line)')
-@optgroup.option('--tab-split', '-t', is_flag=True, default=False, help="Split servers/clusters into tabs (group arguments)")
-@optgroup.option('--tab-split-nogroup', '-T', is_flag=True, default=False, help="Split servers/clusters into tabs (don't group arguments)")
+@optgroup.option('--tab-split', '-t', is_flag=True, default=False, help="Split servers/clusters into tabs and put all hosts specified on the command line in one tab")
+@optgroup.option('--tab-split-nogroup', '-T', is_flag=True, default=False, help="Split servers/clusters into tabs and put each host specified on the command line in a separate tab")
 @optgroup.option('--same-window', '-W', is_flag=True, default=False, help="Use existing window for spawning new tabs")
 @optgroup.group('SSH options')
 @optgroup.option('--forward-agent', '-A', multiple=False, is_flag=True, help='Enable SSH agent forwarding')
-@optgroup.option('--login', '-l', 'username', multiple=False, help='SSH user name')
+@optgroup.option('--login', '-l', multiple=False, help='SSH user name')
 @optgroup.option('--environment', '-e', multiple=False, help='Send environment vars (comma-separated list, need to start with LC_)')
 @optgroup.option('--rank', '-r', is_flag=True, help='Send LC_RANK with the host number as environment variable')
 @optgroup.option('--extra', '-X', multiple=True, help='Additional ssh parameters (e.g. -Xi=myidentity.pem)')
@@ -42,7 +42,7 @@ from iterm2.profile import LocalWriteOnlyProfile
 @optgroup.option('--rows', '-R', multiple=False, type=int, help='Number of rows (columns will be calculated)')
 @click.argument('hosts_or_cluster', nargs=-1, )
 def i2cssh(hosts_or_cluster, *_args, **opts):
-    """HOSTS: [(username@host [username@host] | username@cluster)]"""
+    """HOSTS: [(login@host [login@host] | login@cluster)]"""
 
     sanitize_options(opts)
 
@@ -53,8 +53,7 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # Load config file and get valid options
     config = read_config()
     if config:
-        global_options_from_config = get_global_options_from_config(
-            config, valid_options)
+        global_options_from_config = filter_valid_options(config, valid_options)
 
     # Because we can split tabs based on cluster/hosts/arguments we first
     # create different groups inside the hosts list. If it turns out we
@@ -72,16 +71,17 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
         # Single cluster, so we know there's only one list returned
         groups.append(get_clusters_from_cluster_names(
             [hosts_or_cluster[0]], config, valid_options))
+    # More than one argument, so we assume it's a list of hosts
     elif len(hosts_or_cluster) > 1:
-        argument_hosts = get_hosts(hosts_or_cluster)
+        hosts = get_hosts(hosts_or_cluster)
 
-        # If tab_split is defined, all hosts are grouped into a single tab
-        # otherwise each host is a separate tab
+        # If tab_split is defined, hosts get separate tabs, otherwise we put all
+        # hosts defined as arguments in one group
         if opts.get("tab_split"):
-            groups.append(argument_hosts)
+            groups.append(hosts)
         else:
-            for host in argument_hosts:
-                groups.append([host])
+            for hosts in hosts:
+                groups.append([hosts])
 
     # The command line option '-c' can also provide clusters, so we need to get the hosts
     # from those clusters as well.
@@ -99,60 +99,49 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     if filename := opts.get("file"):
         groups.append(get_hosts(get_host_strs_from_file(filename)))
 
-    # Each host will might have additional options based on cluster config
-    # or username@host syntax. We need to merge those options with the
+    # Each host might have additional options based on cluster config
+    # or login@host syntax. We need to merge those options with the
     # global options specified in the config file and on the command line.
     #
     # Precedence is: command line > global config > cluster config
-    for host in groups:
+    for hosts in groups:
         if config:
             # Apply global options from config file
-            apply_opts(host, global_options_from_config, valid_options)
+            apply_opts(hosts, global_options_from_config, valid_options)
         # Apply options from command line
-        apply_opts(host, opts, valid_options)
-
-    # TODO: all non-boolean cmdline options are passed to hosts, which isn't a problem
-    # but maybe not as nice as it should be.
+        apply_opts(hosts, opts, valid_options)
 
     # Flatten the list if we don't need to split tabs. We create a single
     # group though, so we can still use the same code to calculate geometry
     # in both cases
     if not (opts.get("tab_split") or opts.get("tab_split_nogroup")):
-        groups = [[item for sublist in groups for item in sublist]]
+        groups = [flatten(groups)]
 
+    # Bail if we don't have any hosts
     if len(flatten(groups)) == 0:
         click.echo("No hosts found")
         sys.exit(1)
 
-    # Attach a geometry to each group. Here we take the first host in the group
-    # since it will have all the options (including geometry) from the config
+    # Attach a geometry and group options to each group. Here we take options the first host, since
+    # we assume that all hosts in a group have the same group options. Also, we set a few defaults.
     groups = [{
         "hosts": hosts,
-        "geometry": compute_geometry(len(hosts), hosts[0])
+        "geometry": compute_geometry(len(hosts), hosts[0].get("rows"), hosts[0].get("columns")),
+        "profile": hosts[0].get("profile", "Default"),
+        "shell": hosts[0].get("shell", "bash"),
+        "broadcast": hosts[0].get("broadcast"),
+        "nobroadcast": hosts[0].get("nobroadcast"),
     } for hosts in groups]
 
+    # Execute the SSH sessions
     iterm2.run_until_complete(exec_in_iterm(groups, opts))
 
-
-def get_host_strs_from_file(filename):
-    hosts = []
-    with open(filename) as f:
-        for line in f:
-            hosts.append(line.strip())
-    return hosts
-
-
-def sanitize_options(opts):
-    # Sanitize options, since we need to be able to distinguish between
-    # booleans being set by the user or not set at all, which defaults
-    # to False. Through command line options, booleans can only be set
-    # to True, while in the config file they can be set to True or False.
-    for opt in opts:
-        if opts[opt] is False:
-            opts[opt] = None
-
-
 def exec_in_iterm(groups, opts):
+    """
+    Execute the SSH sessions in iTerm2
+    This function takes in groups of hosts and global options and returns an
+    async function that will be executed by iTerm2
+    """
     async def inner(connection):
         # Setup iterm API connection
         app = await iterm2.async_get_app(connection)
@@ -160,23 +149,24 @@ def exec_in_iterm(groups, opts):
 
         # Bail if we're not inside iterm
         if window is None:
-            print("No current window")
-            return
+            click.echo("No current window")
+            sys.exit(1)
 
+        # Keep track of broadcast domains. This is later used to tell iTerm2 which tabs need to
+        # have keyboard broadcasting enabled.
         broadcast_domains = []
-        for i, group in enumerate(groups):
 
-            # Hosts in the group use the same profile, since we can't specify a profile per host
-            # in the config file. Because of this, we take the profile for the first host in the
-            # group and use that for all hosts in that group.
-            profile_name = group["hosts"][0].get("profile", "Default")
+        for i, group in enumerate(groups):
+            profile_name = group.get("profile")
 
             # Same thing for the shell
-            shell = f"/usr/bin/env {group['hosts'][0].get('shell', 'bash')} -l "
+            shell = f"/usr/bin/env {group.get('shell')} -l "
             lwop = LocalWriteOnlyProfile()
             lwop.set_use_custom_command("Yes")
             lwop.set_command(f'{shell}\n')
 
+            # if this is the first host in the group and we want sessions in a separate window,
+            # we create a new window. In any other cases we just create a new tab for the group
             if i == 0 and not opts.get("same_window"):
                 window = await window.async_create(connection, profile_name, profile_customizations=lwop)
             else:
@@ -198,7 +188,8 @@ def exec_in_iterm(groups, opts):
 
             # List to keep track of panes that are created
             panes = []
-            # First pane is already there
+
+            # After creating the tab, the first pane is already there
             pane = window.current_tab.current_session
             panes.append(pane)
 
@@ -222,9 +213,9 @@ def exec_in_iterm(groups, opts):
                     next_pane = col_row_to_index(col+1, row-1, cols)
                     pane = panes[next_pane]
 
-            # Add panes for this group to a broadcast domain, if the first host sepcifies
+            # Add panes for this group to a broadcast domain, if the first host specifies
             # broadcast as an option, UNLESS nobroadcast is set as well.
-            if not group["hosts"][0].get("nobroadcast") and group["hosts"][0].get("broadcast"):
+            if not group.get("nobroadcast") and group.get("broadcast"):
                 broadcast_domains.append(panes)
 
             for p, pane in enumerate(panes):
@@ -273,6 +264,25 @@ def exec_in_iterm(groups, opts):
 
     return inner
 
+def get_host_strs_from_file(filename):
+    """Gets a list of host strings from a file"""
+    hosts = []
+    with open(filename) as f:
+        for line in f:
+            hosts.append(line.strip())
+    return hosts
+
+
+def sanitize_options(opts):
+    """
+    Sanitize options, since we need to be able to distinguish between
+    booleans being set by the user or not set at all, which defaults
+    to False. Through command line options, booleans can only be set
+    to True, while in the config file they can be set to True or False.
+    """
+    for opt in opts:
+        if opts[opt] is False:
+            opts[opt] = None
 
 async def enable_broadcast(connection, broadcast_domains):
     domains = []
@@ -286,9 +296,9 @@ async def enable_broadcast(connection, broadcast_domains):
 
 
 def get_host_str(host):
-    """Returns a string username@host if the username is known. Otherwise returns just the hostname"""
-    if username := host.get("username"):
-        return f"{username}@{host['hostname']}"
+    """Returns a string login@host if the login is known. Otherwise returns just the hostname"""
+    if login := host.get("login"):
+        return f"{login}@{host['hostname']}"
     else:
         return host["hostname"]
 
@@ -325,11 +335,11 @@ def col_row_to_index(col, row, cols):
     return row * cols + col
 
 
-def compute_geometry(hosts, opts):
+def compute_geometry(hosts, rows, cols):
     """Compute the geometry for the given number of hosts and options"""
-    if rows := opts.get("rows"):
+    if rows:
         cols = math.ceil(hosts / rows)
-    elif cols := opts.get("columns"):
+    elif cols:
         rows = math.ceil(hosts / cols)
     else:
         rows = math.ceil(math.sqrt(hosts))
@@ -341,35 +351,42 @@ def compute_geometry(hosts, opts):
 
 
 def get_hosts(host_strings):
-    """Get hosts from a list of hostname or username@hostname strings"""
-    hosts = []
-    for host_string in host_strings:
-        (username, hostname) = parse_hostname(host_string)
-        host_opts = {"hostname": hostname, "username": username}
-        hosts.append(host_opts)
+    """Get hosts from a list of hostname or login@hostname strings"""
+    hosts = host_strings_to_hosts(host_strings)
     return hosts
 
 
 def get_clusters_from_cluster_names(cluster_names, config, valid_options):
     """
     Get hosts from a list of cluster names. Note that this returns
-    a list of hosts grouped by cluster.
+    a list of lists of hosts; one list per cluster.
+
+    This function doesn't creates hosts from the cluster, but also applies
+    the options from the cluster to the hosts.
     """
     clusters = []
     for cluster_name in cluster_names:
-        hosts = []
-        (username, cluster_name) = parse_hostname(cluster_name)
-        host_names = config["clusters"][cluster_name]["hosts"]
-        cluster_options = get_global_options_from_config(
+        host_strings = config["clusters"][cluster_name]["hosts"]
+        cluster_options = filter_valid_options(
             config["clusters"][cluster_name], valid_options)
-        for hostname in host_names:
-            # Override host options with cluster options
-            host_opts = {"hostname": hostname, "username": username}
-            apply_opts(host_opts, cluster_options, valid_options)
-            hosts.append(host_opts)
+
+        hosts = host_strings_to_hosts(host_strings)
+
+        # Override host options with cluster options
+        for host in hosts:
+            apply_opts(host, cluster_options, valid_options)
+
         clusters.append(hosts)
     return clusters
 
+def host_strings_to_hosts(host_strings):
+    """Get hosts from a list of hostname or login@hostname strings"""
+    hosts = []
+    for host_string in host_strings:
+        (login, hostname) = parse_hostname(host_string)
+        host = {"hostname": hostname, "login": login}
+        hosts.append(host)
+    return hosts
 
 def apply_opts(opts, overrides, valid_options):
     """
@@ -386,21 +403,25 @@ def apply_opts(opts, overrides, valid_options):
 
 
 def parse_hostname(hostname):
-    """Parse a hostname and return a tuple of (username, host)"""
-    username = None
+    """Parse a [login@]hostname and return a tuple of (login, host)"""
+    login = None
     host = hostname
     if "@" in hostname:
-        username, host = hostname.split("@")
-    return username, host
+        login, host = hostname.split("@")
+    return login, host
 
 
-def get_global_options_from_config(config, valid_options):
-    """Get global options from the config file"""
-    global_options = {}
+def filter_valid_options(options, valid_options):
+    """
+    Filter provided options to only include valid options
+    Note that this function will only take top-level options and will
+    not recurse into nested lists.
+    """
+    filtered_options = {}
     for key in valid_options:
-        if key in config:
-            global_options[key] = config[key]
-    return global_options
+        if key in options:
+            filtered_options[key] = options[key]
+    return filtered_options
 
 
 def read_config():

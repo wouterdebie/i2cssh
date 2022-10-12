@@ -25,8 +25,10 @@ Make sure to enable the Python API in iterm2. Go to Preferences -> General -> Ma
     -c, --clusters clus1,clus2       Comma-separated list of clusters specified in ~/.i2csshrc
     -m, --machines a,b,c             Comma-separated list of hosts
     -f, --file FILE                  Cluster file (one hostname per line)
-    -t, --tab-split                  Split servers/clusters into tabs (group arguments)
-    -T, --tab-split-nogroup          Split servers/clusters into tabs (don't group arguments)
+    -t, --tab-split                  Split servers/clusters into tabs and put all hosts specified on
+                                        the command line in one tab
+    -T, --tab-split-nogroup          Split servers/clusters into tabs and put each host specified on
+                                        the command line in a separate tab
     -W, --same-window                Use existing window for spawning new tabs
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
