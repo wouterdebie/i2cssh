@@ -13,7 +13,9 @@ to all sessions.
 
 ## Installing
 
-    $ pip install i2cssh
+    $ brew install wouterdebie/repo/i2cssh
+
+Make sure to enable the Python API in iterm2. Go to Preferences -> General -> Magic -> Enable Python API.
 
 ## Usage
 
