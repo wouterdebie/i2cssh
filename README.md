@@ -32,7 +32,8 @@ Make sure to enable the Python API in iterm2. Go to Preferences -> General -> Ma
     -W, --same-window                Use existing window for spawning new tabs
     -A, --forward-agent              Enable SSH agent forwarding
     -l, --login LOGIN                SSH login name
-    -e, --environment KEY=VAL        Send environment vars (comma-separated list, need to start with LC_)
+    -e, --environment KEY=VAL        Send environment vars
+                                        (comma-separated list, need to start with LC_)
     -r, --rank                       Send LC_RANK with the host number as environment variable
     -F, --fullscreen                 Make the window fullscreen
     -C, --columns COLUMNS            Number of columns (rows will be calculated)
