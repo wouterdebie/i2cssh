@@ -1,11 +1,8 @@
 ## NOTE: PYTHON rewrite!
 
-I finally took some time to rewrite i2cssh in python. For a while iterm2 has had a python API that allows you to automate a bunch
-of stuff. This python implementation uses that API to do the same thing as the original ruby script. This should make this
-app more maintainable, since it doesn't rely on any weird AppleScript bindings and emitting key codes. Secondly, it should be
-quite a bit faster in generating the ssh windows.
+I finally took some time to rewrite i2cssh in python. For a while iterm2 has had a python API that allows you to automate a bunch of stuff. This python implementation uses that API to do the same thing as the original ruby script. This should make this app more maintainable, since it doesn't rely on any weird AppleScript bindings and emitting key codes. Secondly, it should be quite a bit faster in generating the ssh windows.
 
-I've regained new interest, so if you find a bug, please report!
+I've regained new interest, so if you find a bug, please report! Make sure to include your configuration!
 
 # i2cssh
 
