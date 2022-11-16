@@ -16,6 +16,8 @@ to all sessions.
 
 Make sure to enable the Python API in iterm2. Go to Preferences -> General -> Magic -> Enable Python API.
 
+![Settings](images/settings.png)
+
 ## Usage
 
     Usage: i2cssh [options] [(username@host [username@host] | username@cluster)]
