@@ -1,10 +1,12 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 from setuptools import setup
+from version import version
+
 
 setup(
     name='i2cssh',
-    version='0.0.5',
+    version=version(),
     author=u'Wouter de Bie',
     author_email='wouter@evenflow.nl',
     description='csshX like ssh tool for iTerm2',

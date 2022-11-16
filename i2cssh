@@ -13,6 +13,8 @@ from iterm2 import Session
 from iterm2.color import Color
 from iterm2.profile import LocalWriteOnlyProfile
 
+from version import version
+
 
 @click.command()
 @optgroup.group('General options')
@@ -22,6 +24,7 @@ from iterm2.profile import LocalWriteOnlyProfile
 @optgroup.option('--tab-split', '-t', is_flag=True, default=False, help="Split servers/clusters into tabs and put all hosts specified on the command line in one tab")
 @optgroup.option('--tab-split-nogroup', '-T', is_flag=True, default=False, help="Split servers/clusters into tabs and put each host specified on the command line in a separate tab")
 @optgroup.option('--same-window', '-W', is_flag=True, default=False, help="Use existing window for spawning new tabs")
+@optgroup.option('--version', '-v', is_flag=True, default=False, help="Show version")
 @optgroup.group('SSH options')
 @optgroup.option('--forward-agent', '-A', multiple=False, is_flag=True, help='Enable SSH agent forwarding')
 @optgroup.option('--login', '-l', multiple=False, help='SSH user name')
@@ -45,6 +48,10 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     """HOSTS: [(login@host [login@host] | login@cluster)]"""
 
     sanitize_options(opts)
+
+    if opts.get("version"):
+        print(version())
+        sys.exit(0)
 
     # Keep track of valid command line options so we can filter out
     # additional options in the config file
