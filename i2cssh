@@ -105,8 +105,6 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     if filename := opts.get("file"):
         groups.append(get_hosts(get_host_strs_from_file(filename)))
 
-    print(groups)
-
     # Each host might have additional options based on cluster config
     # or login@host syntax. We need to merge those options with the
     # global options specified in the config file and on the command line.
