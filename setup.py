@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='i2cssh',
-    version='0.0.4',
+    version='0.0.5',
     author=u'Wouter de Bie',
     author_email='wouter@evenflow.nl',
     description='csshX like ssh tool for iTerm2',

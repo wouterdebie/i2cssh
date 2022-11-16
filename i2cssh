@@ -69,12 +69,11 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
     # configuration. Otherwise we construct a list of hosts from the arguments.
     if len(hosts_or_cluster) == 1:
         # Single cluster, so we know there's only one list returned
-        groups.append(get_clusters_from_cluster_names(
-            [hosts_or_cluster[0]], config, valid_options))
+        groups = get_clusters_from_cluster_names(
+            [hosts_or_cluster[0]], config, valid_options)
     # More than one argument, so we assume it's a list of hosts
     elif len(hosts_or_cluster) > 1:
         hosts = get_hosts(hosts_or_cluster)
-
         # If tab_split is defined, hosts get separate tabs, otherwise we put all
         # hosts defined as arguments in one group
         if opts.get("tab_split"):
@@ -98,6 +97,8 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
 
     if filename := opts.get("file"):
         groups.append(get_hosts(get_host_strs_from_file(filename)))
+
+    print(groups)
 
     # Each host might have additional options based on cluster config
     # or login@host syntax. We need to merge those options with the
