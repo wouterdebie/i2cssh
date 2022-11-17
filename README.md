@@ -6,7 +6,17 @@ I've regained new interest, so if you find a bug, please report! Make sure to in
 
 # i2cssh
 
-`i2cssh` is a csshX (http://code.google.com/p/csshx/) like tool for connecting over ssh to multiple machines. But instead of creating separate windows and having a master window for input, `i2cssh` uses [Iterm2](https://iterm2.com/) split panes and allows to "Send input to all sessions" (⌘-shift-I) to send commands to all sessions.
+`i2cssh` is a csshX (http://code.google.com/p/csshx/) like tool for connecting ssh to multiple machines using ssh. But instead of creating separate windows and having a master window for input, `i2cssh` uses [Iterm2](https://iterm2.com/) split panes and allows to "Send input to all sessions" (⌘-shift-I) to send commands to all sessions.
+
+![Settings](images/recording.gif)
+
+## Features
+- Opening sessions in the current or new tabs
+- Multiple cluster configuration
+- Enable broadcast by default
+- Multiple profiles
+- Configurable SSH and shell parameters
+- Custom layouts
 
 ## Installing
 
