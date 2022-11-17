@@ -179,7 +179,7 @@ def exec_in_iterm(groups, opts):
                 await window.async_create_tab(profile_name, profile_customizations=lwop)
 
             # Set window to fullscreen if necessary
-            if i == 0 and opts.get("fullscreen"):
+            if i == 0 and opts.get("fullscreen") or group["geometry"].get("requires_fullscreen"):
                 await window.async_set_fullscreen(True)
 
             cols = group["geometry"]["cols"]
@@ -351,9 +351,11 @@ def compute_geometry(hosts, rows, cols):
         rows = math.ceil(math.sqrt(hosts))
         cols = math.ceil(hosts / rows)
 
-    # Quick hack: iTerms default window only supports up to 11 rows and 22 columns
-    # If we surpass either one, we resort to full screen.
-    return {"rows": rows, "cols": cols, "requires_fullscreen": rows > 11 or cols > 22}
+    # Quick hack: iTerms default window only supports up to 12 rows and 16 columns in the default
+    # 80x25 profile. If we surpass either one, we resort to full screen.
+    # TODO: figure out the height and with of the profile and toggle full screen based on that
+    # rather than hardcoded values.
+    return {"rows": rows, "cols": cols, "requires_fullscreen": rows >= 12 or cols >= 16}
 
 
 def get_hosts(host_strings):

@@ -11,6 +11,7 @@ I've regained new interest, so if you find a bug, please report! Make sure to in
 ![Settings](images/recording.gif)
 
 ## Features
+
 - Opening sessions in the current or new tabs
 - Multiple cluster configuration
 - Enable broadcast by default
@@ -160,6 +161,7 @@ Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
 ## TODO
 
 - Better release process (homebrew update after new release)
+- Proper handling of resizing and full screen when the window is too small for the amount of rows or columns.
 
 ## Contributing to i2cssh
 
