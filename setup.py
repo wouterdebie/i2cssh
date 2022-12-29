@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 from setuptools import setup
-from version import version
+from .version import version
 
 
 setup(
