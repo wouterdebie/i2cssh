@@ -129,6 +129,27 @@ environment: # Send the following enviroment variables
 
 Note: rows and columns can't be used at the same time.
 
+Clusters can also include hosts from other clusters through a cluster specific optional parameter `include_from`:
+
+```yaml
+version: 2
+clusters:
+  cluster1:
+    hosts:
+      - host1
+      - host2
+  cluster2:
+    hosts:
+      - host3
+      - host4
+    include_from:
+      - cluster1
+```
+
+Note that only the hosts will be included, but no additional configuration options. Secondly, includes
+aren't transitive, so if `cluster1` includes `cluster2`, which in turn includes `cluster3`, only the
+hosts from `cluster2` will be included in `cluster1`.
+
 The following precedence is used:
 
 `global options from config` < `cluster options from config` < `command line flags`
