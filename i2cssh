@@ -428,7 +428,7 @@ def parse_hostname(hostname):
     login = None
     host = hostname
     if "@" in hostname:
-        login, host = hostname.split("@")
+        login, host = hostname.rsplit("@", 1)
     return login, host
 
 
