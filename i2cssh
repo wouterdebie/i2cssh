@@ -379,7 +379,7 @@ def get_clusters_from_cluster_names(cluster_names, config, valid_options):
     clusters = []
     for cluster_name in cluster_names:
 
-        host_strings = config["clusters"][cluster_name]["hosts"]
+        host_strings = config["clusters"][cluster_name].get("hosts", [])
         cluster_options = filter_valid_options(
             config["clusters"][cluster_name], valid_options)
 
