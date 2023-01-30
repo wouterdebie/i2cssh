@@ -8,7 +8,7 @@ click-option-group==0.5.3
 commonmark==0.9.1
 docutils==0.19
 gitdb==4.0.9
-GitPython==3.1.29
+GitPython==3.1.30
 idna==3.4
 importlib-metadata==5.0.0
 iterm2==2.6
