@@ -24,6 +24,7 @@ from version import version
 @optgroup.option('--tab-split', '-t', is_flag=True, default=False, help="Split servers/clusters into tabs and put all hosts specified on the command line in one tab")
 @optgroup.option('--tab-split-nogroup', '-T', is_flag=True, default=False, help="Split servers/clusters into tabs and put each host specified on the command line in a separate tab")
 @optgroup.option('--same-window', '-W', is_flag=True, default=False, help="Use existing window for spawning new tabs")
+@optgroup.option('--verbose', '-V', is_flag=True, default=False, help="Show verbose output")
 @optgroup.option('--version', '-v', is_flag=True, default=False, help="Show version")
 
 @optgroup.group('SSH options')
@@ -143,7 +144,8 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
         "nobroadcast": hosts[0].get("nobroadcast"),
     } for hosts in groups]
 
-    print(groups)
+    if opts.get("verbose"):
+        print(groups)
 
     # Execute the SSH sessions
     iterm2.run_until_complete(exec_in_iterm(groups, opts))

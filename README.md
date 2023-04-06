@@ -46,6 +46,7 @@ Make sure to enable the Python API in Iterm2. Go to Preferences -> General -> Ma
                                       each host specified on the command line in a
                                       separate tab
         -W, --same-window             Use existing window for spawning new tabs
+        -V, --verbose                 Show verbose output
         -v, --version                 Show version
     SSH options:
         -A, --forward-agent           Enable SSH agent forwarding
