@@ -143,8 +143,6 @@ def i2cssh(hosts_or_cluster, *_args, **opts):
         "nobroadcast": hosts[0].get("nobroadcast"),
     } for hosts in groups]
 
-    print(groups)
-
     # Execute the SSH sessions
     iterm2.run_until_complete(exec_in_iterm(groups, opts))
 
