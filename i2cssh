@@ -261,7 +261,9 @@ def exec_in_iterm(groups, opts):
                             (env_vars_str, send_env) = get_env_vars_str(env_vars)
                             await pane.async_send_text(f"{env_vars_str}\n")
 
-                        ssh_prefix = create_ssh_prefix(opts)
+                        ssh_prefix = create_ssh_prefix(opts.get("forward_agent"),
+                                                       group["hosts"][p].get("extra"),
+                                                       opts.get("gateway"))
 
 
                         if s := opts.get("sleep"):
@@ -334,21 +336,21 @@ def get_env_vars_str(env_vars):
     return (env_vars_str, send_env)
 
 
-def create_ssh_prefix(opts):
+def create_ssh_prefix(forward_agent, extra, gateway):
     """Returns a string that contains the ssh prefix, including the ssh options"""
     ssh_options = []
-    if opts.get("forward_agent"):
+    if forward_agent:
         ssh_options.append("-A")
 
-    if e := opts.get("extra"):
-        for extra in e:
-            if "=" in extra:
-                k, v = extra.split("=")
+    if extra:
+        for e in extra:
+            if "=" in e:
+                k, v = e.split("=")
                 ssh_options.append(f"-{k} {v}")
             else:
-                ssh_options.append(f"-{extra}")
+                ssh_options.append(f"-{e}")
 
-    if g := opts.get("gateway"):
+    if gateway:
         ssh_options.append(f"-o ProxyCommand=\"ssh -W %h:%p {g}\"")
 
     return "ssh " + " ".join(ssh_options)
@@ -433,7 +435,7 @@ def apply_opts(opts, overrides, valid_options):
             apply_opts(opt, overrides, valid_options)
     else:
         for key in valid_options:
-            if key in overrides and overrides[key] is not None:
+            if key in overrides and overrides[key] not in (None, ()):
                 opts[key] = overrides[key]
 
 
