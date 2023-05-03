@@ -345,7 +345,7 @@ def create_ssh_prefix(forward_agent, extra, gateway):
     if extra:
         for e in extra:
             if "=" in e:
-                k, v = e.split("=")
+                k, v = e.split("=", 1)
                 ssh_options.append(f"-{k} {v}")
             else:
                 ssh_options.append(f"-{e}")
