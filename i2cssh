@@ -351,7 +351,7 @@ def create_ssh_prefix(forward_agent, extra, gateway):
                 ssh_options.append(f"-{e}")
 
     if gateway:
-        ssh_options.append(f"-o ProxyCommand=\"ssh -W %h:%p {g}\"")
+        ssh_options.append(f"-o ProxyCommand=\"ssh -W %h:%p {gateway}\"")
 
     return "ssh " + " ".join(ssh_options)
 

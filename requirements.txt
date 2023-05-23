@@ -13,7 +13,7 @@ distlib==0.3.6
 docopt==0.6.2
 docutils==0.19
 filelock==3.9.0
-Flask==2.2.3
+Flask==2.2.5
 gitdb==4.0.9
 GitPython==3.1.30
 google-api-core==2.11.0
@@ -35,7 +35,6 @@ MarkupSafe==2.1.2
 more-itertools==8.14.0
 msgpack==1.0.5
 numpy==1.24.3
-packaging @ file:///private/tmp/sip--packaging-20230420-6688-huyak8/packaging-23.1
 pbr==5.10.0
 pendulum==2.1.2
 Pillow==9.5.0
