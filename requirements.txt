@@ -48,7 +48,7 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycodestyle==2.9.1
 pycparser==2.21
-Pygments==2.13.0
+Pygments==2.15.0
 pynvim==0.4.3
 python-dateutil==2.8.2
 pytzdata==2020.1
