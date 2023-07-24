@@ -27,9 +27,9 @@ setup(
     ],
     python_requires='>3.8',
     install_requires=[
-        'click-option-group==0.5.3',
-        'click==8.1.3',
+        'click-option-group==0.5.6',
+        'click==8.1.6',
         'iterm2==2.6',
-        'PyYAML==6.0',
+        'PyYAML==6.0.1',
     ],
 )
