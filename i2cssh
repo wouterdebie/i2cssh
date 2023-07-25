@@ -25,7 +25,6 @@ from version import version
 @optgroup.option('--tab-split-nogroup', '-T', is_flag=True, default=False, help="Split servers/clusters into tabs and put each host specified on the command line in a separate tab")
 @optgroup.option('--same-window', '-W', is_flag=True, default=False, help="Use existing window for spawning new tabs")
 @optgroup.option('--version', '-v', is_flag=True, default=False, help="Show version")
-
 @optgroup.group('SSH options')
 @optgroup.option('--forward-agent', '-A', multiple=False, is_flag=True, help='Enable SSH agent forwarding')
 @optgroup.option('--login', '-l', multiple=False, help='SSH user name')
@@ -41,11 +40,11 @@ from version import version
 @optgroup.option('--profile', '-p', multiple=False, help='iTerm2 profile name (default: Default)')
 @optgroup.option('--sleep', '-s', multiple=False, type=int, help='Number of seconds to sleep between creating SSH sessions')
 @optgroup.option('--shell', '-S', multiple=False, help='Shell to use when spawning the SSH sessions (default: bash)')
-@optgroup.option('--direction', '-d', multiple=False, default="column", type=click.Choice(['column', 'row'], case_sensitive=False), help='Direction that new sessions are created (default: column)')
-
+@optgroup.option('--exec', '-E', is_flag=True, default=False, help="Use exec when spawning ssh. This will close the pane when ssh exits")
 @optgroup.group("Layout", cls=MutuallyExclusiveOptionGroup)
 @optgroup.option('--columns', '-C', multiple=False, type=int, help='Number of columns (rows will be calculated)')
 @optgroup.option('--rows', '-R', multiple=False, type=int, help='Number of rows (columns will be calculated)')
+@optgroup.option('--direction', '-d', multiple=False, default="column", type=click.Choice(['column', 'row'], case_sensitive=False), help='Direction that new sessions are created (default: column)')
 @click.argument('hosts_or_cluster', nargs=-1, )
 def i2cssh(hosts_or_cluster, *_args, **opts):
     """HOSTS: [(login@host [login@host] | login@cluster)]"""
@@ -234,10 +233,11 @@ def exec_in_iterm(groups, opts):
             for p, pane in enumerate(panes):
                 # There might be more panes than hosts
                 if p < len(group["hosts"]):
-                    host = get_host_str(group["hosts"][p])
+                    host_opts = group["hosts"][p]
+                    host = get_host_str(host_opts)
 
                     # If a custom command is specified, execute that and don't care about ssh at all
-                    custom_command = group["hosts"][p].get("custom_command")
+                    custom_command = host_opts.get("custom_command")
                     if custom_command:
                         # substitute the host name in the custom command
                         cmd = custom_command.replace("{host}", host)
@@ -247,11 +247,11 @@ def exec_in_iterm(groups, opts):
                         send_env = ""
 
                         # Rank is just an env var, so set it if we have it
-                        if opts.get("rank"):
+                        if host_opts.get("rank"):
                             env_vars["LC_RANK"] = str(p)
 
                         # Split other env vars by comma and put them in a dict
-                        if from_env := opts.get("environment"):
+                        if from_env := host_opts.get("environment"):
                             env_vars.update(dict(s.split("=")
                                             for s in from_env.split(",")))
 
@@ -261,12 +261,15 @@ def exec_in_iterm(groups, opts):
                             (env_vars_str, send_env) = get_env_vars_str(env_vars)
                             await pane.async_send_text(f"{env_vars_str}\n")
 
-                        ssh_prefix = create_ssh_prefix(opts.get("forward_agent"),
-                                                       group["hosts"][p].get("extra"),
-                                                       opts.get("gateway"))
+                        ssh_prefix = create_ssh_prefix(host_opts.get("forward_agent"),
+                                                       host_opts.get(
+                                                           "extra"),
+                                                       host_opts.get("gateway"))
 
+                        if host_opts.get("exec"):
+                            ssh_prefix = f"exec {ssh_prefix}"
 
-                        if s := opts.get("sleep"):
+                        if s := host_opts.get("sleep"):
                             await asyncio.sleep(s)
 
                         await pane.async_send_text(f"unset HISTFILE && {ssh_prefix} {send_env} {host}\n")
