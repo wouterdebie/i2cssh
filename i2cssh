@@ -267,7 +267,9 @@ def exec_in_iterm(groups, opts):
                                                        host_opts.get("gateway"))
 
                         if host_opts.get("exec"):
-                            ssh_prefix = f"exec {ssh_prefix}"
+                            # Set ControlMaster=no as a workaround for
+                            # https://gitlab.com/gnachman/iterm2/-/issues/11032
+                            ssh_prefix = f"exec {ssh_prefix} -o ControlMaster=no"
 
                         if s := host_opts.get("sleep"):
                             await asyncio.sleep(s)
