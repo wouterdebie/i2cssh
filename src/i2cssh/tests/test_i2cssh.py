@@ -676,7 +676,27 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_horizontal_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
+    def test_direction_default_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
+        config = {
+            "clusters": {
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                }
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_row_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
         config = {
             "clusters": {
                 "foo": {
@@ -696,7 +716,7 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_vertical_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
+    def test_direction_column_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
         config = {
             "clusters": {
                 "foo": {
@@ -716,7 +736,7 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_horizontal_config_global(
+    def test_direction_row_config_global(
         self, mock_split_pane: MagicMock, mec: MagicMock
     ):
         config = {
@@ -732,14 +752,14 @@ class TestParams(unittest.TestCase):
         self.assertEqual(mock_split_pane.call_count, 3)
         mock_split_pane.assert_has_calls(
             [
+                call("Default", ANY, False, ANY),
                 call("Default", ANY, True, ANY),
-                call("Default", ANY, False, ANY),
-                call("Default", ANY, False, ANY),
+                call("Default", ANY, True, ANY),
             ]
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_vertical_config_global(
+    def test_direction_column_config_global(
         self, mock_split_pane: MagicMock, mec: MagicMock
     ):
         config = {
@@ -762,13 +782,11 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_horizontal_config(
-        self, mock_split_pane: MagicMock, mec: MagicMock
-    ):
+    def test_direction_row_config(self, mock_split_pane: MagicMock, mec: MagicMock):
         config = {
             "clusters": {
-                "direction": "row",
                 "foo": {
+                    "direction": "row",
                     "hosts": ["foo1", "foo2", "foo3", "foo4"],
                 },
             },
@@ -778,20 +796,18 @@ class TestParams(unittest.TestCase):
         self.assertEqual(mock_split_pane.call_count, 3)
         mock_split_pane.assert_has_calls(
             [
+                call("Default", ANY, False, ANY),
                 call("Default", ANY, True, ANY),
-                call("Default", ANY, False, ANY),
-                call("Default", ANY, False, ANY),
+                call("Default", ANY, True, ANY),
             ]
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_vertical_config(
-        self, mock_split_pane: MagicMock, mec: MagicMock
-    ):
+    def test_direction_column_config(self, mock_split_pane: MagicMock, mec: MagicMock):
         config = {
             "clusters": {
-                "direction": "column",
                 "foo": {
+                    "direction": "column",
                     "hosts": ["foo1", "foo2", "foo3", "foo4"],
                 },
             },

@@ -147,8 +147,8 @@ from i2cssh.version import version
     "--direction",
     "-d",
     multiple=False,
-    default="column",
-    type=click.Choice(["column", "row"], case_sensitive=False),
+    default="default",
+    type=click.Choice(["column", "row", "default"], case_sensitive=False),
     help="Direction that new sessions are created (default: column)",
 )
 @click.argument(
@@ -230,6 +230,12 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     if filename := cmdline_opts.get("file"):
         groups.append(get_hosts(get_host_strs_from_file(filename)))
 
+    # Direction is a special case, since it has a default value in the command line options.
+    # In case it's default on the command line, we can assume wasn't set on the command line
+    # and we can delete it from the command opts alltogether. This way we can still use the
+    if cmdline_opts.get("direction") == "default":
+        cmdline_opts.pop("direction")
+
     # Each host might have additional options based on cluster config
     # or login@host syntax. We need to merge those options with the
     # global options specified in the config file and on the command line.
@@ -285,6 +291,7 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
             "shell": hosts[0].get("shell", "bash"),
             "broadcast": hosts[0].get("broadcast"),
             "nobroadcast": hosts[0].get("nobroadcast"),
+            "direction": hosts[0].get("direction"),
         }
         for hosts in groups
     ]
@@ -336,15 +343,12 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
             cols = group["geometry"]["cols"]
             rows = group["geometry"]["rows"]
 
-            if (
-                cmdline_opts.get("direction") == "column"
-                or global_opts.get("direction") == "column"
-            ):
-                vertical = True
-                horizontal = False
-            else:
+            if group.get("direction", "") == "row":
                 vertical = False
                 horizontal = True
+            else:
+                vertical = True
+                horizontal = False
 
             # List to keep track of panes that are created
             panes = []
