@@ -14,7 +14,7 @@ from iterm2 import Session
 from iterm2.color import Color
 from iterm2.profile import LocalWriteOnlyProfile
 
-from version import version
+from i2cssh.version import version
 
 
 @click.command()

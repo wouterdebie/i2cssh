@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 from setuptools import setup
-from version import version
+from src.i2cssh.version import version
 
 
 setup(
@@ -11,7 +11,7 @@ setup(
     author_email="wouter@evenflow.nl",
     description="csshX like ssh tool for iTerm2",
     url="http://github.com/wouterdebie/i2cssh",
-    entry_points={"console_scripts": ["i2cssh=main.py:main"]},
+    entry_points={"console_scripts": ["i2cssh=main:main"]},
     license="MIT",
     keywords="ssh i2cssh csshX".split(),
     classifiers=[
