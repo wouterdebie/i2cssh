@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+BINPATH=$(dirname $0)
+"$BINPATH/../i2cssh/main.py" $@

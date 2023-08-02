@@ -126,8 +126,12 @@ direction: (column/row) # Direction that new sessions are created (default: colu
 shell: <shell> # Shell to use (default: /bin/bash)
 
 environment: # Send the following enviroment variables
-  - LC_FOO: foo
-  - LC_BAR: bar
+  LC_FOO: foo
+  LC_BAR: bar
+
+extra:
+  i: myidentity.pem
+  p: 2222
 ```
 
 Note: rows and columns can't be used at the same time.
