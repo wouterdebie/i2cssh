@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from lib import app
+from i2cssh.lib import app
 
 
 def main():

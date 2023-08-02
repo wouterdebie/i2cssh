@@ -11,7 +11,7 @@ setup(
     author_email="wouter@evenflow.nl",
     description="csshX like ssh tool for iTerm2",
     url="http://github.com/wouterdebie/i2cssh",
-    scripts=["src/bin/i2cssh"],
+    entry_points={"console_scripts": ["i2cssh=main.py:main"]},
     license="MIT",
     keywords="ssh i2cssh csshX".split(),
     classifiers=[
