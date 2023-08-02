@@ -311,12 +311,12 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
             profile_name = group.get("profile")
 
             # Set the shell to be used for the session. Rather than executing this in the
-            # default shell, we add it to a LocalWriteOnlyProfile that is passed in as
+            # default shell, we add it to a LocalWriteOnlyProfile (lwop) that is then passed in as
             # profile_customizations when creating tabs and panes.
             shell = f"/usr/bin/env {group.get('shell')} -l"
             lwop = create_lwop(shell)
 
-            # if this is the first host in the group and we want sessions in a separate window,
+            # If this is the first host in the group and we want sessions in a separate window,
             # we create a new window. In any other cases we just create a new tab for the group
             if i == 0 and not (
                 cmdline_opts.get("same_window") or global_opts.get("same_window")
@@ -325,7 +325,7 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
             else:
                 await create_tab(window, profile_name, lwop)
 
-            # Set window to fullscreen if necessary
+            # Set window to full screen if necessary
             if (
                 i == 0
                 and (cmdline_opts.get("fullscreen") or global_opts.get("fullscreen"))
@@ -356,9 +356,7 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
             # Split vertically cols-1 times from the last pane
             # This takes care of the first row
             for col in range(1, cols):
-                pane = await pane.async_split_pane(
-                    vertical, profile_customizations=lwop, profile=profile_name
-                )
+                pane = await split_pane(profile_name, lwop, vertical, pane)
                 panes.append(pane)
 
             # For subsequent rows, we first go back to the first
@@ -370,9 +368,7 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
                 # Then for each column we split horizontally and jump
                 # to the pane in the next column on the previous row
                 for col in range(cols):
-                    new_pane = await pane.async_split_pane(
-                        horizontal, profile_customizations=lwop, profile=profile_name
-                    )
+                    new_pane = await split_pane(profile_name, lwop, horizontal, pane)
                     panes.append(new_pane)
                     next_pane = col_row_to_index(col + 1, row - 1, cols)
                     pane = panes[next_pane]
@@ -447,6 +443,13 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
         await enable_broadcast(connection, broadcast_domains)
 
     return inner
+
+
+async def split_pane(profile_name, lwop, vertical, pane):
+    pane = await pane.async_split_pane(
+        vertical, profile_customizations=lwop, profile=profile_name
+    )
+    return pane
 
 
 def create_lwop(shell):

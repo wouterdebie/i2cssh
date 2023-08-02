@@ -674,3 +674,135 @@ class TestParams(unittest.TestCase):
             i2cssh.lib.compute_geometry(4, 10, None),
             {"rows": 10, "cols": 1, "requires_fullscreen": False},
         )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_horizontal_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
+        config = {
+            "clusters": {
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                }
+            },
+        }
+        invoke(["-c", "foo", "-d", "row"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, True, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_vertical_cli(self, mock_split_pane: MagicMock, mec: MagicMock):
+        config = {
+            "clusters": {
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                }
+            },
+        }
+        invoke(["-c", "foo", "-d", "column"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_horizontal_config_global(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
+        config = {
+            "direction": "row",
+            "clusters": {
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                },
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_vertical_config_global(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
+        config = {
+            "direction": "column",
+            "clusters": {
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                },
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_horizontal_config(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
+        config = {
+            "clusters": {
+                "direction": "row",
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                },
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
+
+    @patch("i2cssh.lib.split_pane")
+    def test_direction_vertical_config(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
+        config = {
+            "clusters": {
+                "direction": "column",
+                "foo": {
+                    "hosts": ["foo1", "foo2", "foo3", "foo4"],
+                },
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        self.assertEqual(mock_split_pane.call_count, 3)
+        mock_split_pane.assert_has_calls(
+            [
+                call("Default", ANY, True, ANY),
+                call("Default", ANY, False, ANY),
+                call("Default", ANY, False, ANY),
+            ]
+        )
