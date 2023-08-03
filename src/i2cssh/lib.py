@@ -147,8 +147,7 @@ from i2cssh.version import version
     "--direction",
     "-d",
     multiple=False,
-    default="default",
-    type=click.Choice(["column", "row", "default"], case_sensitive=False),
+    type=click.Choice(["column", "row"], case_sensitive=False),
     help="Direction that new sessions are created (default: column)",
 )
 @click.argument(
@@ -173,17 +172,11 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     config = read_config()
     if config:
         global_opts = filter_valid_options(config, valid_options)
-        # apply_opts(global_options_from_config, opts, valid_options)
-        # opts = global_options_from_config
 
     # Because we can split tabs based on cluster/hosts/arguments we first
     # create different groups inside the hosts list. If it turns out we
     # don't need to split tabs, we'll just have one group by flattening
-    # the list.
-
-    # List where we initially store the groups of hosts. Later we'll use these to apply options from
-    # different configuration places (cluster, global, command line), creating config_groups.
-    # Hosts are dictionaries with all the options necessary to spawn the SSH session
+    # the list. Hosts are dictionaries with all the options necessary to spawn the SSH session
     groups = []
 
     # If there's only one argument, we assume it's a cluster name (since there's
@@ -230,12 +223,6 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     if filename := cmdline_opts.get("file"):
         groups.append(get_hosts(get_host_strs_from_file(filename)))
 
-    # Direction is a special case, since it has a default value in the command line options.
-    # In case it's default on the command line, we can assume wasn't set on the command line
-    # and we can delete it from the command opts alltogether. This way we can still use the
-    if cmdline_opts.get("direction") == "default":
-        cmdline_opts.pop("direction")
-
     # Each host might have additional options based on cluster config
     # or login@host syntax. We need to merge those options with the
     # global options specified in the config file and on the command line.
@@ -252,8 +239,7 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
                 apply_opts(host, global_opts, valid_options)
 
             # Apply cluster options from config file
-            cluster_options = host["cluster_options"]
-            apply_opts(host, cluster_options, valid_options)
+            apply_opts(host, host["cluster_options"], valid_options)
             host.pop("cluster_options")
 
             # Apply login from host config we saved it
@@ -450,6 +436,7 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
 
 
 async def split_pane(profile_name, lwop, vertical, pane):
+    """Split a pane vertically or horizontally, depending on the vertical parameter"""
     pane = await pane.async_split_pane(
         vertical, profile_customizations=lwop, profile=profile_name
     )
@@ -457,6 +444,7 @@ async def split_pane(profile_name, lwop, vertical, pane):
 
 
 def create_lwop(shell):
+    """Create a LocalWriteOnlyProfile that sets the shell to be used for the session"""
     lwop = LocalWriteOnlyProfile()
     lwop.set_use_custom_command("Yes")
     lwop.set_command(f"{shell}\n")
@@ -464,14 +452,17 @@ def create_lwop(shell):
 
 
 async def sleep(s):
+    """Sleep for s seconds"""
     await asyncio.sleep(s)
 
 
 async def set_fullscreen(window):
+    """Set the window to fullscreen"""
     await window.async_set_fullscreen(True)
 
 
 async def get_window(connection):
+    """Get the current window"""
     # Setup iterm API connection
     app = await iterm2.async_get_app(connection)
     window = app.current_window
@@ -484,20 +475,24 @@ async def get_window(connection):
 
 
 async def create_window(connection, window, profile_name, lwop):
+    """Create a new window"""
     return await window.async_create(
         connection, profile_name, profile_customizations=lwop
     )
 
 
 async def create_tab(window, profile_name, lwop):
+    """Create a new tab in the given window"""
     await window.async_create_tab(profile_name, profile_customizations=lwop)
 
 
 async def execute_command(pane, cmd):
+    """Executes a command in a pane"""
     await pane.async_send_text(cmd)
 
 
 async def create_unused_pane(pane):
+    """Creates an UNUSED pane"""
     profile = await pane.async_get_profile()
     await pane.async_send_text(f"unset HISTFILE\n")
     await asyncio.sleep(0.3)

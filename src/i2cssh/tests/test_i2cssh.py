@@ -99,7 +99,7 @@ class TestParams(unittest.TestCase):
 
     @patch("i2cssh.lib.create_tab")
     @patch("i2cssh.lib.create_window")
-    def test_tab_split_clusters_config(
+    def test_tab_split_clusters_global_config(
         self, mock_create_window: MagicMock, mock_create_tab: MagicMock, mec: MagicMock
     ):
         config = {
@@ -163,7 +163,7 @@ class TestParams(unittest.TestCase):
 
     @patch("i2cssh.lib.create_tab")
     @patch("i2cssh.lib.create_window")
-    def test_tab_split_no_group_clusters_with_machines_config(
+    def test_tab_split_no_group_clusters_with_machines_global_config(
         self, mock_create_window: MagicMock, mock_create_tab: MagicMock, mec: MagicMock
     ):
         config = {
@@ -224,7 +224,7 @@ class TestParams(unittest.TestCase):
 
     @patch("i2cssh.lib.create_tab")
     @patch("i2cssh.lib.create_window")
-    def test_clusters_same_window_no_group_config(
+    def test_clusters_same_window_no_group_global_config(
         self, mock_create_window: MagicMock, mock_create_tab: MagicMock, mec: MagicMock
     ):
         config = {
@@ -255,13 +255,13 @@ class TestParams(unittest.TestCase):
         invoke(["foo", "-A"], default_config)
         assert_options(mec, "-A")
 
-    def test_forward_agent_config_cluster(self, mec: MagicMock):
+    def test_forward_agent_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["forward_agent"] = True
         invoke(["foo"], config)
         assert_options(mec, "-A")
 
-    def test_forward_agent_config_global(self, mec: MagicMock):
+    def test_forward_agent_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["forward_agent"] = True
         invoke(["foo"], config)
@@ -271,13 +271,13 @@ class TestParams(unittest.TestCase):
         invoke(["foo", "-l", "myuser"], default_config)
         assert_options(mec, "", ["myuser@foo1", "myuser@foo2"])
 
-    def test_login_config(self, mec: MagicMock):
+    def test_login_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["login"] = "myuser"
         invoke(["foo"], config)
         assert_options(mec, "", ["myuser@foo1", "myuser@foo2"])
 
-    def test_login_config_global(self, mec: MagicMock):
+    def test_login_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["login"] = "myuser"
         invoke(["foo"], config)
@@ -287,7 +287,7 @@ class TestParams(unittest.TestCase):
         invoke(["foo", "-e", "LC_FOO=foo,LC_BAR=bar"], default_config)
         assert_options(mec, "-o SendEnv=LC_FOO,LC_BAR")
 
-    def test_environment_config(self, mec: MagicMock):
+    def test_environment_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["environment"] = {"LC_FOO": "foo", "LC_BAR": "bar"}
         invoke(["foo"], config)
@@ -297,7 +297,7 @@ class TestParams(unittest.TestCase):
             extra_calls=["export LC_FOO=foo; export LC_BAR=bar;\n"],
         )
 
-    def test_environment_config_global(self, mec: MagicMock):
+    def test_environment_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["environment"] = {"LC_FOO": "foo", "LC_BAR": "bar"}
         invoke(["foo"], config)
@@ -315,7 +315,7 @@ class TestParams(unittest.TestCase):
             extra_calls=["export LC_RANK=0;\n", "export LC_RANK=1;\n"],
         )
 
-    def test_rank_config(self, mec: MagicMock):
+    def test_rank_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["rank"] = True
         invoke(["foo"], config)
@@ -325,7 +325,7 @@ class TestParams(unittest.TestCase):
             extra_calls=["export LC_RANK=0;\n", "export LC_RANK=1;\n"],
         )
 
-    def test_rank_config_global(self, mec: MagicMock):
+    def test_rank_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["rank"] = True
         invoke(["foo"], config)
@@ -339,19 +339,19 @@ class TestParams(unittest.TestCase):
         invoke(["foo", "-Xi=myidentity.pem", "-Xp=2222"], default_config)
         assert_options(mec, "-i myidentity.pem -p 2222")
 
-    def test_extra_config_list(self, mec: MagicMock):
+    def test_extra_cluster_config_list(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["extra"] = ["i=myidentity.pem", "p=2222"]
         invoke(["foo"], config)
         assert_options(mec, "-i myidentity.pem -p 2222")
 
-    def test_extra_config_dict(self, mec: MagicMock):
+    def test_extra_cluster_config_dict(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["extra"] = {"i": "myidentity.pem", "p": 2222}
         invoke(["foo"], config)
         assert_options(mec, "-i myidentity.pem -p 2222")
 
-    def test_extra_config_global(self, mec: MagicMock):
+    def test_extra_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["extra"] = ["i=myidentity.pem", "p=2222"]
         invoke(["foo"], config)
@@ -361,13 +361,13 @@ class TestParams(unittest.TestCase):
         invoke(["foo", "-g bar"], default_config)
         assert_options(mec, '-o ProxyCommand="ssh -W %h:%p bar"')
 
-    def test_gateway_config(self, mec: MagicMock):
+    def test_gateway_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["gateway"] = "bar"
         invoke(["foo"], config)
         assert_options(mec, '-o ProxyCommand="ssh -W %h:%p bar"')
 
-    def test_gateway_config_global(self, mec: MagicMock):
+    def test_gateway_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["gateway"] = "bar"
         invoke(["foo"], config)
@@ -384,7 +384,7 @@ class TestParams(unittest.TestCase):
             any_order=True,
         )
 
-    def test_custom_command_config(self, mec: MagicMock):
+    def test_custom_command_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["custom_command"] = "mycmd {host} -- bla"
         invoke(["foo"], config)
@@ -397,7 +397,7 @@ class TestParams(unittest.TestCase):
             any_order=True,
         )
 
-    def test_custom_command_config_global(self, mec: MagicMock):
+    def test_custom_command_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["custom_command"] = "mycmd {host} -- bla"
         invoke(["foo"], config)
@@ -423,7 +423,9 @@ class TestParams(unittest.TestCase):
         self.assertEqual(mock_fullscreen.call_count, 0)
 
     @patch("i2cssh.lib.set_fullscreen")
-    def test_fullscreen_on_config(self, mock_fullscreen: MagicMock, mec: MagicMock):
+    def test_fullscreen_on_global_config(
+        self, mock_fullscreen: MagicMock, mec: MagicMock
+    ):
         config = copy.deepcopy(default_config)
         config["fullscreen"] = True
         invoke(["foo"], config)
@@ -468,7 +470,7 @@ class TestParams(unittest.TestCase):
             any_order=True,
         )
 
-    def test_use_exec_config(self, mec: MagicMock):
+    def test_use_exec_cluster_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["exec"] = True
         invoke(["foo"], config)
@@ -481,7 +483,7 @@ class TestParams(unittest.TestCase):
             any_order=True,
         )
 
-    def test_use_exec_config_global(self, mec: MagicMock):
+    def test_use_exec_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["exec"] = True
         invoke(["foo"], config)
@@ -507,7 +509,7 @@ class TestParams(unittest.TestCase):
         mock_broadcast.assert_has_calls([call(ANY, [])])
 
     @patch("i2cssh.lib.set_broadcast_domains")
-    def test_broadcast_on_config(self, mock_broadcast: MagicMock, mec: MagicMock):
+    def test_broadcast_global_config(self, mock_broadcast: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["broadcast"] = True
         invoke(["foo"], config)
@@ -515,9 +517,7 @@ class TestParams(unittest.TestCase):
         mock_broadcast.assert_has_calls([call(ANY, [ANY])])
 
     @patch("i2cssh.lib.set_broadcast_domains")
-    def test_broadcast_on_config_cluster(
-        self, mock_broadcast: MagicMock, mec: MagicMock
-    ):
+    def test_broadcast_cluster_config(self, mock_broadcast: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["broadcast"] = True
         invoke(["foo"], config)
@@ -554,7 +554,7 @@ class TestParams(unittest.TestCase):
         mock_broadcast.assert_has_calls([call(ANY, [])])
 
     @patch("i2cssh.lib.set_broadcast_domains")
-    def test_broadcast_on_config_cluster(
+    def test_broadcast_on_cluster_config_override(
         self, mock_broadcast: MagicMock, mec: MagicMock
     ):
         config = copy.deepcopy(default_config)
@@ -612,7 +612,7 @@ class TestParams(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 2)
 
     @patch("i2cssh.lib.sleep")
-    def test_sleep_config(self, mock_sleep: MagicMock, mec: MagicMock):
+    def test_sleep_cluster_config(self, mock_sleep: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["sleep"] = 1
         invoke(["-c", "foo", "-s", "1"], config)
@@ -620,7 +620,7 @@ class TestParams(unittest.TestCase):
         self.assertEqual(mock_sleep.call_count, 2)
 
     @patch("i2cssh.lib.sleep")
-    def test_sleep_config_global(self, mock_sleep: MagicMock, mec: MagicMock):
+    def test_sleep_global_config(self, mock_sleep: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["sleep"] = 1
         invoke(["-c", "foo", "-s", "1"], config)
@@ -634,7 +634,7 @@ class TestParams(unittest.TestCase):
         mock_lwop.assert_has_calls([call("/usr/bin/env zsh -l")])
 
     @patch("i2cssh.lib.create_lwop")
-    def test_shell_config(self, mock_lwop: MagicMock, mec: MagicMock):
+    def test_shell_cluster_config(self, mock_lwop: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["clusters"]["foo"]["shell"] = "zsh"
         invoke(["-c", "foo"], config)
@@ -642,7 +642,7 @@ class TestParams(unittest.TestCase):
         mock_lwop.assert_has_calls([call("/usr/bin/env zsh -l")])
 
     @patch("i2cssh.lib.create_lwop")
-    def test_shell_config_global(self, mock_lwop: MagicMock, mec: MagicMock):
+    def test_shell_global_config(self, mock_lwop: MagicMock, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["shell"] = "zsh"
         invoke(["-c", "foo"], config)
@@ -736,7 +736,7 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_row_config_global(
+    def test_direction_row_global_config(
         self, mock_split_pane: MagicMock, mec: MagicMock
     ):
         config = {
@@ -759,7 +759,7 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_column_config_global(
+    def test_direction_column_global_config(
         self, mock_split_pane: MagicMock, mec: MagicMock
     ):
         config = {
@@ -782,7 +782,9 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_row_config(self, mock_split_pane: MagicMock, mec: MagicMock):
+    def test_direction_row_cluster_config(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
         config = {
             "clusters": {
                 "foo": {
@@ -803,7 +805,9 @@ class TestParams(unittest.TestCase):
         )
 
     @patch("i2cssh.lib.split_pane")
-    def test_direction_column_config(self, mock_split_pane: MagicMock, mec: MagicMock):
+    def test_direction_column_cluster_config(
+        self, mock_split_pane: MagicMock, mec: MagicMock
+    ):
         config = {
             "clusters": {
                 "foo": {
