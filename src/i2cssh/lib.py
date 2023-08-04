@@ -16,6 +16,11 @@ from iterm2.profile import LocalWriteOnlyProfile
 
 from i2cssh.version import version
 
+EXIT_CODE_NO_HOSTS = 255
+EXIT_CODE_UNKNOWN_CLUSTER = 254
+EXIT_CODE_NO_CURRENT_WINDOW = 253
+EXIT_CODE_INVALID_YAML = 252
+
 
 @click.command()
 @optgroup.group("General options")
@@ -263,7 +268,7 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     # Bail if we don't have any hosts
     if len(flatten(groups)) == 0:
         click.echo("No hosts found")
-        sys.exit(1)
+        sys.exit(EXIT_CODE_NO_HOSTS)
 
     # Attach a geometry and group options to each group. Here we take options the first host, since
     # we assume that all hosts in a group have the same group options. Also, we set a few defaults.
@@ -295,6 +300,10 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
 
     async def inner(connection):
         window = await get_window(connection)
+        # Bail if we're not inside iterm
+        if window is None:
+            click.echo("No current window")
+            sys.exit(EXIT_CODE_NO_CURRENT_WINDOW)
 
         # Keep track of broadcast domains. This is later used to tell iTerm2 which tabs need to
         # have keyboard broadcasting enabled.
@@ -467,10 +476,6 @@ async def get_window(connection):
     app = await iterm2.async_get_app(connection)
     window = app.current_window
 
-    # Bail if we're not inside iterm
-    if window is None:
-        click.echo("No current window")
-        sys.exit(1)
     return window
 
 
@@ -615,7 +620,12 @@ def get_clusters_from_cluster_names(cluster_names, config, valid_options):
     the options from the cluster to the hosts.
     """
     clusters = []
+
     for cluster_name in cluster_names:
+        if cluster_name not in config["clusters"]:
+            click.echo(f"Cluster {cluster_name} not found")
+            sys.exit(EXIT_CODE_UNKNOWN_CLUSTER)
+
         host_strings = config["clusters"][cluster_name].get("hosts", [])
         cluster_options = filter_valid_options(
             config["clusters"][cluster_name], valid_options
@@ -651,15 +661,10 @@ def host_strings_to_hosts(host_strings):
 def apply_opts(target, overrides, valid_options):
     """
     Apply options from the config file and command line.
-    This function will recursively apply options to nested lists.
     """
-    if isinstance(target, list):
-        for host in target:
-            apply_opts(host, overrides, valid_options)
-    else:
-        for key in valid_options:
-            if key in overrides and overrides[key] not in (None, ()):
-                target[key] = overrides[key]
+    for key in valid_options:
+        if key in overrides and overrides[key] not in (None, ()):
+            target[key] = overrides[key]
 
 
 def parse_hostname(hostname):
@@ -694,7 +699,9 @@ def read_config():
             try:
                 return yaml.safe_load(stream)
             except yaml.YAMLError as exc:
-                print(exc)
+                click.echo("Error parsing config file:")
+                click.echo(exc)
+                sys.exit(EXIT_CODE_INVALID_YAML)
 
 
 def flatten(l):

@@ -1,0 +1,4 @@
+[run]
+omit =
+    src/i2cssh/tests/*
+    src/i2cssh/main.py

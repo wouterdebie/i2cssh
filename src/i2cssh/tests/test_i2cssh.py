@@ -1,28 +1,118 @@
-from email.policy import default
+import asyncio
+import copy
 import unittest
+from email.policy import default
+from unittest.mock import ANY, AsyncMock, MagicMock, call, mock_open, patch
+
+import pytest
 from click.testing import CliRunner
+
 import i2cssh
 from i2cssh.lib import app
-from unittest.mock import MagicMock, patch, ANY, call
-import copy
+from i2cssh.version import version
 
 
 def test_help():
     runner = CliRunner()
-    result = runner.invoke(app, ["-h"])
-    assert result.exit_code == 2
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
     assert result.output.startswith("Usage:")
+
+
+def test_version():
+    runner = CliRunner()
+    result = runner.invoke(app, ["-v"])
+    assert result.exit_code == 0
+    assert result.output.startswith(version())
+
+
+@pytest.mark.asyncio
+@patch("asyncio.sleep", new_callable=AsyncMock)
+async def test_sleep(sleep_moc: AsyncMock):
+    await i2cssh.lib.sleep(1)
+    sleep_moc.assert_called_once_with(1)
+
+
+@pytest.mark.asyncio
+@patch("asyncio.sleep", new_callable=AsyncMock)
+async def test_create_unused_pane(sleep_moc: AsyncMock):
+    pane = AsyncMock()
+    profile = AsyncMock()
+    pane.async_get_profile.return_value = profile
+    await i2cssh.lib.create_unused_pane(pane)
+    pane.async_get_profile.assert_called_once()
+    sleep_moc.assert_called_once_with(0.3)
+    profile.async_set_foreground_color.assert_called_once()
+    pane.async_send_text.assert_has_calls(
+        [
+            call("unset HISTFILE\n"),
+            call(
+                "stty -isig -icanon -echo && echo -e '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nUNUSED' && cat > /dev/null\n"
+            ),
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_fullscreen():
+    window = AsyncMock()
+    await i2cssh.lib.set_fullscreen(window)
+    window.async_set_fullscreen.assert_called_once_with(True)
+
+
+@pytest.mark.asyncio
+@patch("iterm2.async_get_app", new_callable=AsyncMock)
+async def test_get_window(iterm_mock: AsyncMock):
+    connection = AsyncMock()
+    await i2cssh.lib.get_window(connection)
+    iterm_mock.assert_called_once_with(connection)
+
+
+@pytest.mark.asyncio
+async def test_execute_command():
+    pane = AsyncMock()
+    cmd = MagicMock()
+    await i2cssh.lib.execute_command(pane, cmd)
+    pane.async_send_text.assert_called_once_with(cmd)
+
+
+def test_get_host_strs_from_file():
+    with patch("builtins.open", mock_open(read_data="foo\nbar\n")):
+        assert i2cssh.lib.get_host_strs_from_file("foo") == ["foo", "bar"]
 
 
 def invoke(args, config):
     with patch("i2cssh.lib.read_config") as mock_read_config, patch(
         "i2cssh.lib.get_window"
-    ):
+    ), patch("iterm2.run_until_complete", run_until_complete_mock):
         mock_read_config.return_value = config
         runner = CliRunner()
         result = runner.invoke(app, args)
         assert result.exit_code == 0
         return result
+
+
+def run_until_complete_mock(target):
+    connection = MagicMock()()
+    loop = asyncio.get_event_loop()
+    tasks = [loop.create_task(target(connection))]
+    loop.run_until_complete(asyncio.wait(tasks))
+
+
+class TestReadConfig(unittest.TestCase):
+    @patch("os.path.isfile", return_value=True)
+    @patch("builtins.open", mock_open(read_data="@"))
+    @patch("sys.exit")
+    def test_read_test_read_config_invalid_yaml(
+        self, exit_mock: MagicMock, open_mock: MagicMock
+    ):
+        i2cssh.lib.read_config()
+        exit_mock.assert_called_once_with(252)
+
+    @patch("os.path.isfile", return_value=True)
+    @patch("builtins.open", mock_open(read_data="version: 2\nfoo: bar\n"))
+    def test_read_config(self, open_mock: MagicMock):
+        assert i2cssh.lib.read_config() == {"foo": "bar", "version": 2}
 
 
 default_config = {
@@ -50,6 +140,45 @@ def assert_options(mec, options, hosts=["foo1", "foo2"], extra_calls=[]):
 
 @patch("i2cssh.lib.execute_command")
 class TestParams(unittest.TestCase):
+    def test_no_args(self, mec: MagicMock):
+        with patch("i2cssh.lib.read_config") as mock_read_config, patch(
+            "i2cssh.lib.get_window"
+        ), patch("iterm2.run_until_complete", run_until_complete_mock):
+            mock_read_config.return_value = default_config
+            runner = CliRunner()
+            result = runner.invoke(app)
+            assert result.exit_code == 255
+
+    def test_unknown_cluster(self, mec: MagicMock):
+        with patch("i2cssh.lib.read_config") as mock_read_config, patch(
+            "i2cssh.lib.get_window"
+        ), patch("iterm2.run_until_complete", run_until_complete_mock):
+            mock_read_config.return_value = default_config
+            runner = CliRunner()
+            result = runner.invoke(app, ["unknown_cluster"])
+            assert result.exit_code == 254
+
+    def test_unknown_clusters_cli(self, mec: MagicMock):
+        with patch("i2cssh.lib.read_config") as mock_read_config, patch(
+            "i2cssh.lib.get_window"
+        ), patch("iterm2.run_until_complete", run_until_complete_mock):
+            mock_read_config.return_value = default_config
+            runner = CliRunner()
+            result = runner.invoke(app, ["-c", "unknown_cluster"])
+            assert result.exit_code == 254
+
+    def test_no_current_window_cli(self, mec: MagicMock):
+        with patch("i2cssh.lib.read_config") as mock_read_config, patch(
+            "i2cssh.lib.get_window"
+        ) as mock_get_window, patch(
+            "iterm2.run_until_complete", run_until_complete_mock
+        ):
+            mock_read_config.return_value = default_config
+            mock_get_window.return_value = None
+            runner = CliRunner()
+            result = runner.invoke(app, ["-c", "foo"])
+            assert result.exit_code == 253
+
     def test_clusters_cli(self, mec: MagicMock):
         invoke(["-c", "foo"], default_config)
         assert_options(mec, "")
@@ -73,6 +202,21 @@ class TestParams(unittest.TestCase):
         assert_options(mec, "", ["foo1", "foo2", "bar1", "bar2"])
         mock_create_window.assert_called_once()
         self.assertEqual(mock_create_tab.call_count, 0)
+
+    def test_include_from(self, mec: MagicMock):
+        config = {
+            "clusters": {
+                "foo": {
+                    "include_from": ["bar"],
+                    "hosts": ["foo1", "foo2"],
+                },
+                "bar": {
+                    "hosts": ["bar1", "bar2"],
+                },
+            }
+        }
+        invoke(["foo"], config)
+        assert_options(mec, "", ["foo1", "foo2", "bar1", "bar2"])
 
     @patch("i2cssh.lib.create_tab")
     @patch("i2cssh.lib.create_window")
@@ -251,6 +395,30 @@ class TestParams(unittest.TestCase):
         invoke(["-m", "bar1,bar2"], default_config)
         assert_options(mec, "", ["bar1", "bar2"])
 
+    def test_multiple_hosts_cli(self, mec: MagicMock):
+        invoke(["bar1", "bar2"], default_config)
+        assert_options(mec, "", ["bar1", "bar2"])
+
+    @patch("i2cssh.lib.create_tab")
+    @patch("i2cssh.lib.create_window")
+    def test_hosts_same_window_no_group_cli(
+        self, mock_create_window: MagicMock, mock_create_tab: MagicMock, mec: MagicMock
+    ):
+        invoke(["-T", "bar1", "bar2"], default_config)
+        assert_options(mec, "", ["bar1", "bar2"])
+        self.assertEqual(mock_create_window.call_count, 1)
+        self.assertEqual(mock_create_tab.call_count, 1)
+
+    @patch("i2cssh.lib.create_tab")
+    @patch("i2cssh.lib.create_window")
+    def test_hosts_same_window_no_group_cli(
+        self, mock_create_window: MagicMock, mock_create_tab: MagicMock, mec: MagicMock
+    ):
+        invoke(["-t", "bar1", "bar2"], default_config)
+        assert_options(mec, "", ["bar1", "bar2"])
+        self.assertEqual(mock_create_window.call_count, 1)
+        self.assertEqual(mock_create_tab.call_count, 0)
+
     def test_forward_agent_cli(self, mec: MagicMock):
         invoke(["foo", "-A"], default_config)
         assert_options(mec, "-A")
@@ -280,6 +448,19 @@ class TestParams(unittest.TestCase):
     def test_login_global_config(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
         config["login"] = "myuser"
+        invoke(["foo"], config)
+        assert_options(mec, "", ["myuser@foo1", "myuser@foo2"])
+
+    def test_login_host_config(self, mec: MagicMock):
+        config = {
+            "same_window": True,
+            "clusters": {
+                "foo": {
+                    "hosts": ["myuser@foo1", "myuser@foo2"],
+                },
+            },
+        }
+
         invoke(["foo"], config)
         assert_options(mec, "", ["myuser@foo1", "myuser@foo2"])
 
@@ -336,14 +517,14 @@ class TestParams(unittest.TestCase):
         )
 
     def test_extra_cli(self, mec: MagicMock):
-        invoke(["foo", "-Xi=myidentity.pem", "-Xp=2222"], default_config)
-        assert_options(mec, "-i myidentity.pem -p 2222")
+        invoke(["foo", "-Xi=myidentity.pem", "-Xp=2222", "-XZ"], default_config)
+        assert_options(mec, "-i myidentity.pem -p 2222 -Z")
 
     def test_extra_cluster_config_list(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
-        config["clusters"]["foo"]["extra"] = ["i=myidentity.pem", "p=2222"]
+        config["clusters"]["foo"]["extra"] = ["i=myidentity.pem", "p=2222", "Z"]
         invoke(["foo"], config)
-        assert_options(mec, "-i myidentity.pem -p 2222")
+        assert_options(mec, "-i myidentity.pem -p 2222 -Z")
 
     def test_extra_cluster_config_dict(self, mec: MagicMock):
         config = copy.deepcopy(default_config)
@@ -826,3 +1007,25 @@ class TestParams(unittest.TestCase):
                 call("Default", ANY, False, ANY),
             ]
         )
+
+    @patch("i2cssh.lib.create_unused_pane")
+    def test_direction_column_cluster_config(
+        self, mock_create_unused_pane: MagicMock, mec: MagicMock
+    ):
+        config = {
+            "clusters": {
+                "foo": {
+                    "direction": "column",
+                    "hosts": ["foo1", "foo2", "foo3"],
+                },
+            },
+        }
+        invoke(["-c", "foo"], config)
+        assert_options(mec, "")
+        mock_create_unused_pane.assert_called_once()
+
+    @patch("i2cssh.lib.get_host_strs_from_file")
+    def test_file_cli(self, mock_get_host_strs_from_file: MagicMock, mec: MagicMock):
+        mock_get_host_strs_from_file.return_value = ["bar1", "bar2"]
+        invoke(["-f", "bar_hosts"], default_config)
+        assert_options(mec, "", ["bar1", "bar2"])
