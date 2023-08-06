@@ -177,6 +177,8 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     config = read_config()
     if config:
         global_opts = filter_valid_options(config, valid_options)
+    else:
+        global_opts = {}
 
     # Because we can split tabs based on cluster/hosts/arguments we first
     # create different groups inside the hosts list. If it turns out we
