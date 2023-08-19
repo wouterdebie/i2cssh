@@ -704,6 +704,8 @@ def read_config():
                 click.echo("Error parsing config file:")
                 click.echo(exc)
                 sys.exit(EXIT_CODE_INVALID_YAML)
+    else:
+        return {}
 
 
 def flatten(l):
