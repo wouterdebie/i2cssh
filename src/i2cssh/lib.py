@@ -20,6 +20,7 @@ EXIT_CODE_NO_HOSTS = 255
 EXIT_CODE_UNKNOWN_CLUSTER = 254
 EXIT_CODE_NO_CURRENT_WINDOW = 253
 EXIT_CODE_INVALID_YAML = 252
+EXIT_CODE_NO_CLUSTERS = 251
 
 
 @click.command()
@@ -624,6 +625,10 @@ def get_clusters_from_cluster_names(cluster_names, config, valid_options):
     clusters = []
 
     for cluster_name in cluster_names:
+        if not config.get("clusters"):
+            click.echo("No clusters found in config file")
+            sys.exit(EXIT_CODE_NO_CLUSTERS)
+
         if cluster_name not in config["clusters"]:
             click.echo(f"Cluster {cluster_name} not found")
             sys.exit(EXIT_CODE_UNKNOWN_CLUSTER)
