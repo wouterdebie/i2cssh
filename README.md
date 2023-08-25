@@ -1,9 +1,3 @@
-## NOTE (fall 2022)
-
-I finally took some time to rewrite `i2cssh` in python. For a while now Iterm2 has had a python API that allows you to automate a bunch of stuff. This python implementation uses that API to do the same thing as the original ruby script. This should make this app more maintainable, since it doesn't rely on any weird AppleScript bindings and emitting key codes. Secondly, it should be quite a bit faster in generating the ssh windows.
-
-I've regained new interest, so if you find a bug, please report! Make sure to include your configuration!
-
 # i2cssh
 
 `i2cssh` is a csshX (http://code.google.com/p/csshx/) like tool for connecting ssh to multiple machines using ssh. But instead of creating separate windows and having a master window for input, `i2cssh` uses [Iterm2](https://iterm2.com/) split panes and allows to "Send input to all sessions" (⌘-shift-I) to send commands to all sessions.
@@ -193,6 +187,12 @@ Make sure the config file is valid YAML (e.g. use spaces instead of tabs)
 - Better release process (homebrew update after new release)
 - Proper handling of resizing and full screen when the window is too small for the amount of rows or columns.
 
+## NOTE (fall 2022)
+
+I finally took some time to rewrite `i2cssh` in python. For a while now Iterm2 has had a python API that allows you to automate a bunch of stuff. This python implementation uses that API to do the same thing as the original ruby script. This should make this app more maintainable, since it doesn't rely on any weird AppleScript bindings and emitting key codes. Secondly, it should be quite a bit faster in generating the ssh windows.
+
+I've regained new interest, so if you find a bug, please report! Make sure to include your configuration!
+
 ## Contributing to i2cssh
 
 I know that `i2cssh` doesn't have all the functionality of csshX, but either let me know what you really need or fork, hack and create a pull request.
@@ -205,5 +205,5 @@ I know that `i2cssh` doesn't have all the functionality of csshX, but either let
 
 ## Copyright
 
-Copyright (c) 2011-2022 Wouter de Bie. See LICENSE.txt for
+Copyright (c) 2011-2023 Wouter de Bie. See LICENSE.txt for
 further details.
