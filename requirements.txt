@@ -72,7 +72,7 @@ terminaltables==3.1.10
 toml==0.10.2
 twine==4.0.1
 typing_extensions @ file:///private/tmp/python-typing-extensions-20230215-6738-uifapf/typing_extensions-4.5.0/dist/typing_extensions-4.5.0-py3-none-any.whl
-urllib3==1.26.12
+urllib3==1.26.18
 virtualenv==20.20.0
 webencodings==0.5.1
 websockets==10.3
