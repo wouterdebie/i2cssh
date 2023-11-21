@@ -76,5 +76,5 @@ urllib3==1.26.12
 virtualenv==20.20.0
 webencodings==0.5.1
 websockets==10.3
-Werkzeug==2.2.3
+Werkzeug==3.0.1
 zipp==3.9.0
