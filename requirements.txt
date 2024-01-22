@@ -37,7 +37,7 @@ msgpack==1.0.5
 numpy==1.24.3
 pbr==5.10.0
 pendulum==2.1.2
-Pillow==10.0.1
+Pillow==10.2.0
 pkginfo==1.8.3
 platformdirs==3.0.0
 ply==3.11
