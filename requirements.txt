@@ -22,7 +22,7 @@ google-cloud-core==2.3.2
 google-cloud-datastore==2.15.1
 googleapis-common-protos==1.59.0
 greenlet==2.0.2
-grpcio==1.53.0
+grpcio==1.53.2
 grpcio-status==1.53.0
 idna==3.4
 importlib-metadata==5.0.0
