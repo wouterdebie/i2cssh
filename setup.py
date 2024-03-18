@@ -1,8 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 from setuptools import setup
-from src.i2cssh.version import version
 
+from src.i2cssh.version import version
 
 setup(
     name="i2cssh",
@@ -29,7 +29,7 @@ setup(
     install_requires=[
         "click-option-group==0.5.6",
         "click==8.1.6",
-        "iterm2==2.6",
+        "iterm2==2.7",
         "PyYAML==6.0.1",
     ],
 )
