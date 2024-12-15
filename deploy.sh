@@ -1,4 +1,4 @@
 #!/bin/bash
 
 python3 setup.py sdist
-twine upload dist/*
+twine upload --verbose dist/*
