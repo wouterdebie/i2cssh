@@ -63,7 +63,7 @@ Make sure to enable the Python API in Iterm2. Go to Preferences -> General -> Ma
         -s, --sleep INTEGER           Number of seconds to sleep between creating
                                       SSH sessions
         -S, --shell TEXT              Shell to use when spawning the SSH sessions
-                                      (default: bash)
+                                      (default: $SHELL)
         -d, --direction [column|row]  Direction that new sessions are created
                                       (default: column)
     Layout: [mutually_exclusive]

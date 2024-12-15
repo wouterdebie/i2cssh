@@ -8,6 +8,7 @@ import sys
 
 import click
 import iterm2
+import shellingham
 import yaml
 from click_option_group import MutuallyExclusiveOptionGroup, optgroup
 from iterm2 import Session
@@ -21,6 +22,11 @@ EXIT_CODE_UNKNOWN_CLUSTER = 254
 EXIT_CODE_NO_CURRENT_WINDOW = 253
 EXIT_CODE_INVALID_YAML = 252
 EXIT_CODE_NO_CLUSTERS = 251
+
+try:
+    current_shell = shellingham.detect_shell()[0]
+except shellingham.ShellDetectionFailure:
+    current_shell = "zsh"
 
 
 @click.command()
@@ -125,7 +131,7 @@ EXIT_CODE_NO_CLUSTERS = 251
     "--shell",
     "-S",
     multiple=False,
-    help="Shell to use when spawning the SSH sessions (default: bash)",
+    help=f"Shell to use when spawning the SSH sessions (default: {current_shell})",
 )
 @optgroup.option(
     "--exec",
@@ -282,7 +288,7 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
                 len(hosts), hosts[0].get("rows"), hosts[0].get("columns")
             ),
             "profile": hosts[0].get("profile", "Default"),
-            "shell": hosts[0].get("shell", "bash"),
+            "shell": hosts[0].get("shell", current_shell),
             "broadcast": hosts[0].get("broadcast"),
             "nobroadcast": hosts[0].get("nobroadcast"),
             "direction": hosts[0].get("direction"),
@@ -391,7 +397,7 @@ def exec_in_iterm(groups, cmdline_opts, global_opts):
                     if custom_command:
                         # substitute the host name in the custom command
                         cmd = custom_command.replace("{host}", host).lstrip()
-                        await execute_command(pane, f"unset HISTFILE && {cmd}\n")
+                        await execute_command(pane, f" unset HISTFILE && {cmd}\n")
                     else:
                         env_vars = {}
                         send_env = ""

@@ -29,7 +29,8 @@ setup(
     install_requires=[
         "click-option-group==0.5.6",
         "click==8.1.7",
-        "iterm2==2.7",
+        "iterm2==2.9",
         "PyYAML==6.0.2",
+        "shellingham==1.5.4",
     ],
 )
