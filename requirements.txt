@@ -1,4 +1,4 @@
 click==8.1.7
 click-option-group==0.5.6
-iterm2==2.7
+iterm2==2.9
 PyYAML==6.0.2
