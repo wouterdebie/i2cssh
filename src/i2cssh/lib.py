@@ -299,6 +299,12 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     # Preserve current $PATH variable. Some shells (e.g. fish) are not in the default $PATH.
     current_path = os.environ.get("PATH")
 
+    # Python 3.12+ no longer implicitly creates an event loop; iterm2 requires one to exist.
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
     # Execute the SSH sessions
     iterm2.run_until_complete(
         exec_in_iterm(groups, cmdline_opts, global_opts, current_path)
