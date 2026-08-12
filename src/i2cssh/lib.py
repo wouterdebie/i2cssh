@@ -23,6 +23,17 @@ EXIT_CODE_NO_CURRENT_WINDOW = 253
 EXIT_CODE_INVALID_YAML = 252
 EXIT_CODE_NO_CLUSTERS = 251
 
+
+def ensure_event_loop():
+    """Create a current event loop when the Python runtime has none."""
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
+
 try:
     current_shell = shellingham.detect_shell()[0]
 except shellingham.ShellDetectionFailure:
@@ -300,6 +311,7 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     current_path = os.environ.get("PATH")
 
     # Execute the SSH sessions
+    ensure_event_loop()
     iterm2.run_until_complete(
         exec_in_iterm(groups, cmdline_opts, global_opts, current_path)
     )

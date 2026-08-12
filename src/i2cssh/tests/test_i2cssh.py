@@ -26,6 +26,54 @@ def test_version():
     assert result.output.startswith(version())
 
 
+@patch("asyncio.set_event_loop")
+@patch("asyncio.new_event_loop")
+@patch("asyncio.get_event_loop", side_effect=RuntimeError)
+def test_ensure_event_loop_creates_missing_loop(
+    get_event_loop_mock: MagicMock,
+    new_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    loop = MagicMock()
+    new_event_loop_mock.return_value = loop
+
+    assert i2cssh.lib.ensure_event_loop() is loop
+    get_event_loop_mock.assert_called_once_with()
+    new_event_loop_mock.assert_called_once_with()
+    set_event_loop_mock.assert_called_once_with(loop)
+
+
+@patch("asyncio.set_event_loop")
+@patch("asyncio.new_event_loop")
+@patch("asyncio.get_event_loop")
+def test_ensure_event_loop_reuses_current_loop(
+    get_event_loop_mock: MagicMock,
+    new_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    loop = MagicMock()
+    get_event_loop_mock.return_value = loop
+
+    assert i2cssh.lib.ensure_event_loop() is loop
+    new_event_loop_mock.assert_not_called()
+    set_event_loop_mock.assert_not_called()
+
+
+@patch("i2cssh.lib.ensure_event_loop")
+@patch("iterm2.run_until_complete")
+@patch("i2cssh.lib.read_config", return_value={})
+def test_app_ensures_event_loop(
+    _read_config_mock: MagicMock,
+    run_until_complete_mock: MagicMock,
+    ensure_event_loop_mock: MagicMock,
+):
+    result = CliRunner().invoke(app, ["host-one", "host-two"])
+
+    assert result.exit_code == 0
+    ensure_event_loop_mock.assert_called_once_with()
+    run_until_complete_mock.assert_called_once()
+
+
 @pytest.mark.asyncio
 @patch("asyncio.sleep", new_callable=AsyncMock)
 async def test_sleep(sleep_moc: AsyncMock):
