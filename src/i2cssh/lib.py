@@ -23,6 +23,36 @@ EXIT_CODE_NO_CURRENT_WINDOW = 253
 EXIT_CODE_INVALID_YAML = 252
 EXIT_CODE_NO_CLUSTERS = 251
 
+
+def ensure_event_loop():
+    """Install and return a fresh event loop for iTerm's synchronous runner."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        pass
+    else:
+        raise RuntimeError("i2cssh cannot run inside a running event loop")
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    return loop
+
+
+def close_event_loop(loop):
+    """Cancel outstanding work and close an event loop owned by this CLI."""
+    if loop is None or loop.is_closed() or loop.is_running():
+        return
+
+    pending = [task for task in asyncio.all_tasks(loop) if not task.done()]
+    for task in pending:
+        task.cancel()
+    if pending:
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+
+    loop.run_until_complete(loop.shutdown_asyncgens())
+    loop.close()
+
+
 try:
     current_shell = shellingham.detect_shell()[0]
 except shellingham.ShellDetectionFailure:
@@ -300,9 +330,21 @@ def app(hosts_or_cluster, *_args, **cmdline_opts):
     current_path = os.environ.get("PATH")
 
     # Execute the SSH sessions
-    iterm2.run_until_complete(
-        exec_in_iterm(groups, cmdline_opts, global_opts, current_path)
-    )
+    bootstrap_event_loop = ensure_event_loop()
+    try:
+        iterm2.run_until_complete(
+            exec_in_iterm(groups, cmdline_opts, global_opts, current_path)
+        )
+    finally:
+        try:
+            current_event_loop = asyncio.get_event_loop()
+        except RuntimeError:
+            current_event_loop = None
+
+        close_event_loop(bootstrap_event_loop)
+        if current_event_loop is not bootstrap_event_loop:
+            close_event_loop(current_event_loop)
+        asyncio.set_event_loop(None)
 
 
 def exec_in_iterm(groups, cmdline_opts, global_opts, path):
@@ -338,8 +380,12 @@ def exec_in_iterm(groups, cmdline_opts, global_opts, path):
                 cmdline_opts.get("same_window") or global_opts.get("same_window")
             ):
                 window = await create_window(connection, window, profile_name, lwop)
+                # window.current_tab depends on selected_tab_id, which is only
+                # set by a later async notification and races with this code;
+                # window.tabs is populated synchronously and safe to read now.
+                new_tab = window.tabs[-1]
             else:
-                await create_tab(window, profile_name, lwop)
+                new_tab = await create_tab(window, profile_name, lwop)
 
             # Set window to full screen if necessary
             if (
@@ -362,8 +408,9 @@ def exec_in_iterm(groups, cmdline_opts, global_opts, path):
             # List to keep track of panes that are created
             panes = []
 
-            # After creating the tab, the first pane is already there
-            pane = window.current_tab.current_session
+            # current_session has the same async-notification race as
+            # current_tab above; sessions[0] is the pane created above.
+            pane = new_tab.sessions[0]
             panes.append(pane)
 
             # Split vertically cols-1 times from the last pane
@@ -512,7 +559,7 @@ async def create_window(connection, window, profile_name, lwop):
 
 async def create_tab(window, profile_name, lwop):
     """Create a new tab in the given window"""
-    await window.async_create_tab(profile_name, profile_customizations=lwop)
+    return await window.async_create_tab(profile_name, profile_customizations=lwop)
 
 
 async def execute_command(pane, cmd):

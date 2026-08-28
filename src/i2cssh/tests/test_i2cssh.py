@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import unittest
 from email.policy import default
 from unittest.mock import ANY, AsyncMock, MagicMock, call, mock_open, patch
@@ -24,6 +25,103 @@ def test_version():
     result = runner.invoke(app, ["-v"])
     assert result.exit_code == 0
     assert result.output.startswith(version())
+
+
+@patch("asyncio.set_event_loop")
+@patch("asyncio.new_event_loop")
+@patch("asyncio.get_running_loop", side_effect=RuntimeError)
+def test_ensure_event_loop_installs_fresh_loop(
+    get_running_loop_mock: MagicMock,
+    new_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    loop = MagicMock()
+    new_event_loop_mock.return_value = loop
+
+    assert i2cssh.lib.ensure_event_loop() is loop
+    get_running_loop_mock.assert_called_once_with()
+    new_event_loop_mock.assert_called_once_with()
+    set_event_loop_mock.assert_called_once_with(loop)
+
+
+@patch("asyncio.set_event_loop")
+@patch("asyncio.new_event_loop")
+@patch("asyncio.get_running_loop")
+def test_ensure_event_loop_rejects_running_loop(
+    get_running_loop_mock: MagicMock,
+    new_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    get_running_loop_mock.return_value = MagicMock()
+
+    with pytest.raises(RuntimeError, match="running event loop"):
+        i2cssh.lib.ensure_event_loop()
+
+    new_event_loop_mock.assert_not_called()
+    set_event_loop_mock.assert_not_called()
+
+
+def test_close_event_loop():
+    loop = asyncio.new_event_loop()
+
+    i2cssh.lib.close_event_loop(loop)
+
+    assert loop.is_closed()
+
+
+@patch("asyncio.set_event_loop")
+@patch("asyncio.get_event_loop")
+@patch("i2cssh.lib.close_event_loop")
+@patch("i2cssh.lib.ensure_event_loop")
+@patch("iterm2.run_until_complete")
+@patch("i2cssh.lib.read_config", return_value={})
+def test_app_closes_bootstrap_event_loop(
+    _read_config_mock: MagicMock,
+    run_until_complete_mock: MagicMock,
+    ensure_event_loop_mock: MagicMock,
+    close_event_loop_mock: MagicMock,
+    get_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    loop = MagicMock()
+    ensure_event_loop_mock.return_value = loop
+    get_event_loop_mock.return_value = loop
+
+    result = CliRunner().invoke(app, ["host-one", "host-two"])
+
+    assert result.exit_code == 0
+    ensure_event_loop_mock.assert_called_once_with()
+    run_until_complete_mock.assert_called_once()
+    close_event_loop_mock.assert_called_once_with(loop)
+    set_event_loop_mock.assert_called_once_with(None)
+
+
+@patch("asyncio.set_event_loop")
+@patch("asyncio.get_event_loop")
+@patch("i2cssh.lib.close_event_loop")
+@patch("i2cssh.lib.ensure_event_loop")
+@patch("iterm2.run_until_complete")
+@patch("i2cssh.lib.read_config", return_value={})
+def test_app_closes_replacement_event_loop(
+    _read_config_mock: MagicMock,
+    _run_until_complete_mock: MagicMock,
+    ensure_event_loop_mock: MagicMock,
+    close_event_loop_mock: MagicMock,
+    get_event_loop_mock: MagicMock,
+    set_event_loop_mock: MagicMock,
+):
+    bootstrap_loop = MagicMock()
+    replacement_loop = MagicMock()
+    ensure_event_loop_mock.return_value = bootstrap_loop
+    get_event_loop_mock.return_value = replacement_loop
+
+    result = CliRunner().invoke(app, ["host-one", "host-two"])
+
+    assert result.exit_code == 0
+    close_event_loop_mock.assert_has_calls(
+        [call(bootstrap_loop), call(replacement_loop)]
+    )
+    set_event_loop_mock.assert_called_once_with(None)
 
 
 @pytest.mark.asyncio
@@ -69,6 +167,88 @@ async def test_get_window(iterm_mock: AsyncMock):
 
 
 @pytest.mark.asyncio
+async def test_create_tab_returns_created_tab():
+    tab = MagicMock()
+    window = MagicMock()
+    window.async_create_tab = AsyncMock(return_value=tab)
+    lwop = MagicMock()
+
+    result = await i2cssh.lib.create_tab(window, "Default", lwop)
+
+    assert result is tab
+    window.async_create_tab.assert_awaited_once_with(
+        "Default", profile_customizations=lwop
+    )
+
+
+@pytest.mark.asyncio
+async def test_exec_in_iterm_uses_tab_from_created_window():
+    stale_pane = AsyncMock()
+    new_pane = AsyncMock()
+    stale_tab = MagicMock(current_session=stale_pane)
+    new_tab = MagicMock(sessions=[new_pane])
+    current_window = MagicMock(current_tab=stale_tab)
+    created_window = MagicMock(current_tab=stale_tab, tabs=[stale_tab, new_tab])
+    group = {
+        "profile": "Default",
+        "shell": "zsh",
+        "geometry": {"cols": 1, "rows": 1, "requires_fullscreen": False},
+        "hosts": [{"hostname": "host"}],
+    }
+
+    with patch(
+        "i2cssh.lib.get_window", new=AsyncMock(return_value=current_window)
+    ), patch(
+        "i2cssh.lib.create_window", new=AsyncMock(return_value=created_window)
+    ), patch(
+        "i2cssh.lib.execute_command", new_callable=AsyncMock
+    ) as execute_command_mock, patch(
+        "i2cssh.lib.enable_broadcast", new_callable=AsyncMock
+    ):
+        await i2cssh.lib.exec_in_iterm([group], {}, {}, "/test/bin")(AsyncMock())
+
+    execute_command_mock.assert_awaited_once_with(
+        new_pane, "unset HISTFILE && ssh host\n"
+    )
+    new_pane.async_activate.assert_awaited_once_with()
+    stale_pane.async_activate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_exec_in_iterm_uses_created_tab_in_current_window():
+    stale_pane = AsyncMock()
+    new_pane = AsyncMock()
+    stale_tab = MagicMock(current_session=stale_pane)
+    new_tab = MagicMock(sessions=[new_pane])
+    window = MagicMock(current_tab=stale_tab)
+    group = {
+        "profile": "Default",
+        "shell": "zsh",
+        "geometry": {"cols": 1, "rows": 1, "requires_fullscreen": False},
+        "hosts": [{"hostname": "host"}],
+    }
+
+    with patch(
+        "i2cssh.lib.get_window", new=AsyncMock(return_value=window)
+    ), patch(
+        "i2cssh.lib.create_tab", new=AsyncMock(return_value=new_tab)
+    ), patch(
+        "i2cssh.lib.execute_command", new_callable=AsyncMock
+    ) as execute_command_mock, patch(
+        "i2cssh.lib.enable_broadcast", new_callable=AsyncMock
+    ):
+        await i2cssh.lib.exec_in_iterm(
+            [group], {"same_window": True}, {}, "/test/bin"
+        )(AsyncMock())
+
+    execute_command_mock.assert_awaited_once_with(
+        new_pane, "unset HISTFILE && ssh host\n"
+    )
+    new_pane.async_activate.assert_awaited_once_with()
+    stale_pane.async_activate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_execute_command():
     pane = AsyncMock()
     cmd = MagicMock()
@@ -84,19 +264,40 @@ def test_get_host_strs_from_file():
 def invoke(args, config):
     with patch("i2cssh.lib.read_config") as mock_read_config, patch(
         "i2cssh.lib.get_window"
-    ), patch("iterm2.run_until_complete", run_until_complete_mock):
+    ) as mock_get_window, patch(
+        "iterm2.run_until_complete", run_until_complete_mock
+    ):
+        pane = AsyncMock()
+        tab = MagicMock(sessions=[pane])
+        window = MagicMock(tabs=[tab])
+        window.async_create = AsyncMock(return_value=window)
+        window.async_create_tab = AsyncMock(return_value=tab)
+
         mock_read_config.return_value = config
+        mock_get_window.return_value = window
+
+        if isinstance(i2cssh.lib.create_window, AsyncMock):
+            i2cssh.lib.create_window.return_value = window
+        if isinstance(i2cssh.lib.create_tab, AsyncMock):
+            i2cssh.lib.create_tab.return_value = tab
+
         runner = CliRunner()
         result = runner.invoke(app, args)
+        if result.exception:
+            raise result.exception
         assert result.exit_code == 0
         return result
 
 
 def run_until_complete_mock(target):
-    connection = MagicMock()()
-    loop = asyncio.get_event_loop()
-    tasks = [loop.create_task(target(connection))]
-    loop.run_until_complete(asyncio.wait(tasks))
+    connection = AsyncMock()
+    response = MagicMock()
+    response.HasField.return_value = False
+    response.set_broadcast_domains_response.status = (
+        i2cssh.lib.iterm2.api_pb2.SetBroadcastDomainsResponse.Status.Value("OK")
+    )
+    connection.async_dispatch_until_id.return_value = response
+    asyncio.get_event_loop().run_until_complete(target(connection))
 
 
 class TestReadConfig(unittest.TestCase):
@@ -559,8 +760,8 @@ class TestParams(unittest.TestCase):
 
         mec.assert_has_calls(
             [
-                call(ANY, f"unset HISTFILE && mycmd foo1 -- bla\n"),
-                call(ANY, f"unset HISTFILE && mycmd foo2 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo1 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo2 -- bla\n"),
             ],
             any_order=True,
         )
@@ -572,8 +773,8 @@ class TestParams(unittest.TestCase):
 
         mec.assert_has_calls(
             [
-                call(ANY, f"unset HISTFILE && mycmd foo1 -- bla\n"),
-                call(ANY, f"unset HISTFILE && mycmd foo2 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo1 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo2 -- bla\n"),
             ],
             any_order=True,
         )
@@ -585,8 +786,8 @@ class TestParams(unittest.TestCase):
 
         mec.assert_has_calls(
             [
-                call(ANY, f"unset HISTFILE && mycmd foo1 -- bla\n"),
-                call(ANY, f"unset HISTFILE && mycmd foo2 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo1 -- bla\n"),
+                call(ANY, " unset HISTFILE && mycmd foo2 -- bla\n"),
             ],
             any_order=True,
         )
@@ -812,7 +1013,9 @@ class TestParams(unittest.TestCase):
     def test_shell_cli(self, mock_lwop: MagicMock, mec: MagicMock):
         invoke(["-c", "foo", "-S", "zsh"], default_config)
         assert_options(mec, "")
-        mock_lwop.assert_has_calls([call("/usr/bin/env zsh -l")])
+        mock_lwop.assert_has_calls(
+            [call(f'/usr/bin/env PATH="{os.environ.get("PATH")}" zsh -l')]
+        )
 
     @patch("i2cssh.lib.create_lwop")
     def test_shell_cluster_config(self, mock_lwop: MagicMock, mec: MagicMock):
@@ -820,7 +1023,9 @@ class TestParams(unittest.TestCase):
         config["clusters"]["foo"]["shell"] = "zsh"
         invoke(["-c", "foo"], config)
         assert_options(mec, "")
-        mock_lwop.assert_has_calls([call("/usr/bin/env zsh -l")])
+        mock_lwop.assert_has_calls(
+            [call(f'/usr/bin/env PATH="{os.environ.get("PATH")}" zsh -l')]
+        )
 
     @patch("i2cssh.lib.create_lwop")
     def test_shell_global_config(self, mock_lwop: MagicMock, mec: MagicMock):
@@ -828,7 +1033,9 @@ class TestParams(unittest.TestCase):
         config["shell"] = "zsh"
         invoke(["-c", "foo"], config)
         assert_options(mec, "")
-        mock_lwop.assert_has_calls([call("/usr/bin/env zsh -l")])
+        mock_lwop.assert_has_calls(
+            [call(f'/usr/bin/env PATH="{os.environ.get("PATH")}" zsh -l')]
+        )
 
     def test_compute_geometry(self, mec: MagicMock):
         self.assertEqual(
